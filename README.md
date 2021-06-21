@@ -1,5 +1,6 @@
 # e-restaurant
 
+---------------------------------------
 
 ## 체크포인트
 ```
@@ -16,6 +17,7 @@
   11. Polyglot
   12. Self-healing (Liveness Probe)
 ```
+---------------------------------------
 
 ## 1. 시나리오
 >  사원은 구내식당에서 자신의 ID Card를 이용하여 점심 또는 저녁식사를 하고
@@ -39,6 +41,7 @@
 ### 1.3. 성능
 * Main Service의 성능에 영향이 없도록 사용자 주문상태를 조회할 수 있도록 View를 제공한다.
 
+---------------------------------------
 
 ## 2. 분석/설계
 
@@ -74,6 +77,8 @@
 - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
 - Kafka를 이용하여 호출관계에서 Pub/Sub 구조로 설계하고  Feign CLient는 REST API를 이용한 Req/Resp 로 형식 구현함
 - Hall Service는 Hsql DB 셜계하였고 기타 Kitchen, Payment 서비스는 H2 DB 설계(Polyglot)
+
+---------------------------------------
 
 ## 3. 구현
 
@@ -455,6 +460,7 @@ http GET http://20.194.44.70:8080/billings
   ![image](https://user-images.githubusercontent.com/82796103/120737496-1dd8a380-c529-11eb-907a-7a8b1a3a8bcd.png)
 
 
+---------------------------------------
 
 ## 4. 운영
 > 운영에 필요한 검증항목은 다음과 같다.
