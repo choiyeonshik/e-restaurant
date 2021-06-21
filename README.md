@@ -32,14 +32,13 @@
   7. Circuit Breaker
   8. Autoscale (HPA)
   9. Zero-downtime deploy (Readiness Probe)
-  10.Config Map/ Persistence Volume
-  11.Polyglot
-  12.Self-healing (Liveness Probe)
+  10. Config Map/ Persistence Volume
+  11. Polyglot
+  12. Self-healing (Liveness Probe)
 
 ## 분석/설계
 
-Event Storming 결과
-이벤트스토밍 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
+* Event Storming 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
 
 ### Event 도출
