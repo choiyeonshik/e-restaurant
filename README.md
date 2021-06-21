@@ -40,7 +40,7 @@
 
 ### Event Storming
 
-*결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
+* 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
 
 #### Event 도출
@@ -55,6 +55,10 @@
 #### 완성된 모형
 
 ![image](https://user-images.githubusercontent.com/82796103/122709917-30c5d480-d29a-11eb-94ce-43be118641f3.png)
+
+#### 시나리오 검증
+
+![image](https://user-images.githubusercontent.com/82796103/122719284-f4e63b80-d2a8-11eb-9d1b-4f662784e65d.png)
 
 
 ### Hexagonal Architecture 설계
