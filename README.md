@@ -1,28 +1,6 @@
 # e-restaurant
 
 
-## 시나리오
->  사원은 구내식당에서 자신의 ID Card를 이용하여 점심 또는 저녁식사를 하고
-  비용은 급여에서 자동 차감되도록 서비스를 구현한다.
-
-  ### 기능적 요구사항
-    1. 사원은 사원증을 타각하여 음식을 주문한다.
-    2. 주문한 음식을 주방에서 요리한다.
-    3. 주문이 완료되면 급여에서 해당 금액을 차감한다.
-    4. 요리가 완료된 음식은 사원에게 메시지를 발송한다.
-    5. 사원은 주문상태를 조회할 수 있다.
-
-  ### 비기능적 요구사항
-    1. 트랜잭션
-      - 급여 차감은 주문이 완료 상태이어야 한다.
-    2. 장애격리
-      - 급여 정산 서비스가 정상 동작하지 않더라도 주문은 계속할 수 있어야 한다.
-      - 동시간대에 주문이 폭주하는 경우에 잠시 동안 주문을 받지 않고 중단한 후 다시 서비스 할 수 있다.
-
-  ### 성능
-    - Main Service의 성능에 영향이 없도록 사용자 주문상태를 조회할 수 있도록 View를 제공한다.
-
-
 ## 체크포인트
 
   1. Saga
@@ -38,11 +16,34 @@
   11. Polyglot
   12. Self-healing (Liveness Probe)
 
-## 분석/설계
+## 1. 시나리오
+>  사원은 구내식당에서 자신의 ID Card를 이용하여 점심 또는 저녁식사를 하고
+>
+>  비용은 급여에서 자동 차감되도록 서비스를 구현한다.
 
-  MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 설계를 완성하였습니다.
+### 1.1. 기능적 요구사항
+1. 사원은 사원증을 타각하여 음식을 주문한다.
+1. 주문한 음식을 주방에서 요리한다.
+1. 주문이 완료되면 급여에서 해당 금액을 차감한다.
+1. 요리가 완료된 음식은 사원에게 메시지를 발송한다.
+1. 사원은 주문상태를 조회할 수 있다.
 
-#### Event Storming
+### 1.2. 비기능적 요구사항
+* 트랜잭션
+  - 급여 차감은 주문이 완료 상태이어야 한다.
+* 장애격리
+  - 급여 정산 서비스가 정상 동작하지 않더라도 주문은 계속할 수 있어야 한다.
+  - 동시간대에 주문이 폭주하는 경우에 잠시 동안 주문을 받지 않고 중단한 후 다시 서비스 할 수 있다.
+
+### 성능
+* Main Service의 성능에 영향이 없도록 사용자 주문상태를 조회할 수 있도록 View를 제공한다.
+
+
+## 2. 분석/설계
+
+>  MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 설계를 완성하였습니다.
+
+#### 2.1. Event Storming
 
 * 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
@@ -65,18 +66,19 @@
 ![image](https://user-images.githubusercontent.com/82796103/122719284-f4e63b80-d2a8-11eb-9d1b-4f662784e65d.png)
 
 
-#### Hexagonal Architecture 설계
+#### 2.2. Hexagonal Architecture 설계
 
 ![image](https://user-images.githubusercontent.com/82796103/122718453-ed726280-d2a7-11eb-9078-175c5b87092f.png)
 
-    - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
-    - Kafka를 이용하여 호출관계에서 Pub/Sub 구조로 설계하고  Feign CLient는 REST API를 이용한 Req/Resp 로 형식 구현함
-    - Hall Service는 Hsql DB 셜계하였고 기타 Kitchen, Payment 서비스는 H2 DB 설계(Polyglot)
+- Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
+- Kafka를 이용하여 호출관계에서 Pub/Sub 구조로 설계하고  Feign CLient는 REST API를 이용한 Req/Resp 로 형식 구현함
+- Hall Service는 Hsql DB 셜계하였고 기타 Kitchen, Payment 서비스는 H2 DB 설계(Polyglot)
 
-## 구현
+## 3. 구현
 
 > 각 서비스의 실행방법은 아래와 같다.
- (포트넘버 : 8081 ~ 8084, 8088)
+>
+> (포트넘버 : 8081 ~ 8084, 8088)
 
 * 실행
 ```sh
@@ -96,9 +98,93 @@
     mvn spring-boot:run
 ```
 
-#### Gateway
+* 시나리오 검증
+> 시나리오 검증을 위한 스크립트는 아래와 같다.
+
+  - 초기데이터 구축
+    + UserDeposit 등록
+```
+http POST http://20.194.44.70:8080/userDeposits userid=1 deposit=100000
+http POST http://20.194.44.70:8080/userDeposits userid=2 deposit=200000
+http POST http://20.194.44.70:8080/userDeposits userid=3 deposit=200000
+``` 
+  - 
+    + UserDeposit 확인
+```
+http GET http://20.194.44.70:8080/userDeposits
+```
+![image](https://user-images.githubusercontent.com/84724396/121111293-9309e880-c849-11eb-8e74-9263cf46e734.png)
+
+  - 
+    + Bike 등록
+```
+http POST http://20.194.44.70:8080/bikes bikeid=1 status=사용가능 location=분당_정자역_1구역
+http POST http://20.194.44.70:8080/bikes bikeid=2 status=사용중 location=분당_정자역_1구역
+http POST http://20.194.44.70:8080/bikes bikeid=3 status=불량 location=분당_정자역_1구역
+``` 
+  - 
+    + Bike 확인
+``` 
+http GET http://20.194.44.70:8080/bikes
+``` 
+![image](https://user-images.githubusercontent.com/84724396/121111431-d1070c80-c849-11eb-9de0-7e625c5a7c42.png)
+
+  - 자전거 대여
+    + 대여(rent) 화면
+```
+http POST http://20.194.44.70:8080/rents userid=1 bikeid=1
+```
+![image](https://user-images.githubusercontent.com/84724396/121114074-0e6d9900-c84e-11eb-970c-82c39fa6350d.png)
+
+  - 
+    + 대여(rent) 후 bikes 화면 : 자전거 상태가 '사용 가능' -> '사용중' 으로 변경된다.     
+```
+     http GET http://20.194.44.70:8080/bikes
+```
+![사용중](https://user-images.githubusercontent.com/84724396/121121127-fd2a8980-c859-11eb-9955-54988c8b331e.PNG)
+  - 
+    + 대여(rent) 후 billings 화면 : bill이 하나 생성된다.
+```
+http GET http://20.194.44.70:8080/billings
+```
+![image](https://user-images.githubusercontent.com/84724396/121126700-901bf180-c863-11eb-9b92-22cc6d227ff4.png)
+
+
+- 자전거 대여 불가 화면 (Request / Response)
+
+     1. rent 신청를 하면 bike에서 자전거 상태를 체크하고 '사용 가능'일 때만 rent 가 성공한다.    
+     http POST http://20.194.44.70:8080/rents bikeid=2 userid=2
+
+![image](https://user-images.githubusercontent.com/84724396/121115300-e2ebae00-c84f-11eb-9266-8c05b0a3f2d3.png)
+
+
+![image](https://user-images.githubusercontent.com/84724396/121115456-10d0f280-c850-11eb-9377-c33ef6e31514.png)
+
+      2. 자전거 생태 체크를 하는 bike 서비스를 내리고 rent 신청을 하면 자전거 생태 체크를 할 수 없어 rent를 할 수 없다.
+
+![오류1](https://user-images.githubusercontent.com/84724396/121119465-a3749000-c856-11eb-8772-f00832f5c3fd.PNG)
+
+
+    위와 같이 Rent -> Bike -> Return -> Billing -> userDeposit 순으로 Sequence Flow 가 정상동작하는 것을 확인할 수 있다.
+    (대여불가 자전거는 예외)
+
+    대여 후 Status가 "사용중"으로, 반납하면 Status가 "사용가능"으로 Update 되는 것을 볼 수 있으며 반납이후 사용자의 예치금은 정산 후 차감된다.
+
+    또한 Correlation을 key를 활용하여 userid, rentid, bikeid, billid 등 원하는 값을 서비스간의 I/F를 통하여 서비스 간에 트랜잭션이 묶여 있음을 알 수 있다.
+
+#### 3.1. CQRS
+* 대여(rent) 후 rentAndBillingView 화면(CQRS) : rent한 정보를 조회할 수 있다.
+    http GET http://20.194.44.70:8080/rentAndBillingViews
+
+![image](https://user-images.githubusercontent.com/84724396/121114171-34933900-c84e-11eb-98b6-b02faf2e5b6b.png)
+
+    타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 조회가 가능하도록 rentAndBillingView 서비스의 CQRS를 통하여 Costomer Center 서비스를 구현하였다.
+    rentAndBillingView View를 통하여 사용자가 rental한 bike 정보와 billing 정보를 조회할 수 있으며 반납 후 billing 상태를 확인할 수 있다. 
+
+
+#### 3.2. Gateway
 > API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 Gateay를 적용하였다.
-    
+```
 	server:
 	port: 8088
 	
@@ -175,8 +261,9 @@
 	
 	server:
 	port: 8080
-    
-#### Correlation, Req/Resp
+```
+
+#### 3.3. Correlation, Req/Resp
 
 > API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
 >
@@ -354,9 +441,9 @@
 	}
 ```
 
-#### Polyglot 프로그래밍
+#### 3.4. Polyglot 프로그래밍
 
-> hall 서비스와 기타 bike, billing, bikeDepository 등 서비스는  다른 DB를 사용하여 폴리글랏을 만족시키고 있다.
+> hall 서비스의 Hsql DB와 기타 bike, billing, bikeDepository 등 서비스의  H2 DB를 사용하여 폴리글랏을 구현하였다.
 
 * hall service의 pom.xml DB 설정 코드
 
@@ -368,94 +455,15 @@
 
 
 
-## 시나리오 검증
-> 시나리오 검증을 위한 스크립트는 아래와 같다.
-
-
-#### 초기데이터 구축
-> 초기 데이터는 아래와 같이 같다.
-
-    [UserDeposit 등록]
-    http POST http://20.194.44.70:8080/userDeposits userid=1 deposit=100000
-    http POST http://20.194.44.70:8080/userDeposits userid=2 deposit=200000
-    http POST http://20.194.44.70:8080/userDeposits userid=3 deposit=200000
-    
-    [UserDeposit 확인]
-    http GET http://20.194.44.70:8080/userDeposits
- 
- ![image](https://user-images.githubusercontent.com/84724396/121111293-9309e880-c849-11eb-8e74-9263cf46e734.png)
-
-
-    [Bike 등록]
-    http POST http://20.194.44.70:8080/bikes bikeid=1 status=사용가능 location=분당_정자역_1구역
-    http POST http://20.194.44.70:8080/bikes bikeid=2 status=사용중 location=분당_정자역_1구역
-    http POST http://20.194.44.70:8080/bikes bikeid=3 status=불량 location=분당_정자역_1구역
-    
-    [Bike 확인]
-    http GET http://20.194.44.70:8080/bikes
- ![image](https://user-images.githubusercontent.com/84724396/121111431-d1070c80-c849-11eb-9de0-7e625c5a7c42.png)
-
-#### 자전거 대여
-- 대여(rent) 화면
-    http POST http://20.194.44.70:8080/rents userid=1 bikeid=1
-    
-![image](https://user-images.githubusercontent.com/84724396/121114074-0e6d9900-c84e-11eb-970c-82c39fa6350d.png)
-
-- 대여(rent) 후 bikes 화면
-     자전거 상태가 '사용 가능' -> '사용중' 으로 변경된다.     
-     http GET http://20.194.44.70:8080/bikes
-
-![사용중](https://user-images.githubusercontent.com/84724396/121121127-fd2a8980-c859-11eb-9955-54988c8b331e.PNG)
-    
-- 대여(rent) 후 billings 화면
-    bill이 하나 생성된다.
-    http GET http://20.194.44.70:8080/billings
-
-![image](https://user-images.githubusercontent.com/84724396/121126700-901bf180-c863-11eb-9b92-22cc6d227ff4.png)
-
-
-- 대여(rent) 후 rentAndBillingView 화면(CQRS)
-    rent한 정보를 조회할 수 있다.
-    http GET http://20.194.44.70:8080/rentAndBillingViews
-
-![image](https://user-images.githubusercontent.com/84724396/121114171-34933900-c84e-11eb-98b6-b02faf2e5b6b.png)
-
-    타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 조회가 가능하도록 rentAndBillingView 서비스의 CQRS를 통하여 Costomer Center 서비스를 구현하였다.
-    rentAndBillingView View를 통하여 사용자가 rental한 bike 정보와 billing 정보를 조회할 수 있으며 반납 후 billing 상태를 확인할 수 있다. 
-
-
-- 자전거 대여 불가 화면 (Request / Response)
-
-     1. rent 신청를 하면 bike에서 자전거 상태를 체크하고 '사용 가능'일 때만 rent 가 성공한다.    
-     http POST http://20.194.44.70:8080/rents bikeid=2 userid=2
-
-![image](https://user-images.githubusercontent.com/84724396/121115300-e2ebae00-c84f-11eb-9266-8c05b0a3f2d3.png)
-
-
-![image](https://user-images.githubusercontent.com/84724396/121115456-10d0f280-c850-11eb-9377-c33ef6e31514.png)
-
-      2. 자전거 생태 체크를 하는 bike 서비스를 내리고 rent 신청을 하면 자전거 생태 체크를 할 수 없어 rent를 할 수 없다.
-
-![오류1](https://user-images.githubusercontent.com/84724396/121119465-a3749000-c856-11eb-8772-f00832f5c3fd.PNG)
-
-
-    위와 같이 Rent -> Bike -> Return -> Billing -> userDeposit 순으로 Sequence Flow 가 정상동작하는 것을 확인할 수 있다.
-    (대여불가 자전거는 예외)
-
-    대여 후 Status가 "사용중"으로, 반납하면 Status가 "사용가능"으로 Update 되는 것을 볼 수 있으며 반납이후 사용자의 예치금은 정산 후 차감된다.
-
-    또한 Correlation을 key를 활용하여 userid, rentid, bikeid, billid 등 원하는 값을 서비스간의 I/F를 통하여 서비스 간에 트랜잭션이 묶여 있음을 알 수 있다.
-
-
-## 운영
+## 4. 운영
 > 운영에 필요한 검증항목은 다음과 같다.
 
-#### namespace 생성
+#### 4.1. namespace 생성
 ```sh
 	  kubectl create ns e-restaurant
 ```
 
-#### Deploy / Pipeline
+#### 4.2 Deploy / Pipeline
 
 * git에서 소스 가져오기
 ```sh
@@ -540,7 +548,7 @@
 
 
 
-#### ConfigMap 적용
+#### 4.3. ConfigMap 적용
 >	시스템별로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리한다.
 	
 * application.yml 파일에 ${api.url.bikeservice} 설정
@@ -555,7 +563,7 @@
 ![image](https://user-images.githubusercontent.com/82796103/121039821-61166900-c7ec-11eb-9c88-a9bb5221f924.png)
 
 
-#### Autoscale (HPA)
+#### 4.4. Autoscale (HPA)
 
 * 부하 테스트 siege Pod 설치
 ```sh
@@ -600,7 +608,8 @@
 
 ![autoscale3](https://user-images.githubusercontent.com/82795748/121107154-643c4400-c842-11eb-9033-69c1a3114eb2.jpg)
 
-#### Circuit Breaker
+
+#### 4.5. Circuit Breaker
 
 > 서킷 브레이킹 프레임워크의 선택 : Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
@@ -636,7 +645,7 @@
 
 
 
-#### Self-healing (Liveness Probe)
+#### 4.6. Self-healing (Liveness Probe)
 
 * userdeposit 서비스 정상 확인
 
@@ -674,7 +683,7 @@ vi deployment.yml
 ![image](https://user-images.githubusercontent.com/84724396/121130881-fa379500-c869-11eb-9921-b24701660a72.png)
 
 
-#### Zero-downtime deploy (readiness probe)
+#### 4.7. Zero-downtime deploy (readiness probe)
 
 * readiness 옵션 제거 후 배포 - 신규 Pod 생성 시 downtime 발생
 
