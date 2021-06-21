@@ -2,7 +2,7 @@
 
 
 ## 체크포인트
-
+```
   1. Saga
   2. CQRS
   3. Correlation
@@ -15,6 +15,7 @@
   10. Config Map/ Persistence Volume
   11. Polyglot
   12. Self-healing (Liveness Probe)
+```
 
 ## 1. 시나리오
 >  사원은 구내식당에서 자신의 ID Card를 이용하여 점심 또는 저녁식사를 하고
