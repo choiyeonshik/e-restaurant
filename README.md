@@ -42,7 +42,7 @@
 
   MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 설계를 완성하였습니다.
 
-### Event Storming
+#### Event Storming
 
 * 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
@@ -65,7 +65,7 @@
 ![image](https://user-images.githubusercontent.com/82796103/122719284-f4e63b80-d2a8-11eb-9d1b-4f662784e65d.png)
 
 
-### Hexagonal Architecture 설계
+#### Hexagonal Architecture 설계
 
 ![image](https://user-images.githubusercontent.com/82796103/122718453-ed726280-d2a7-11eb-9078-175c5b87092f.png)
 
@@ -78,7 +78,7 @@
 > 각 서비스의 실행방법은 아래와 같다.
  (포트넘버 : 8081 ~ 8084, 8088)
 
-* 실행방법
+* 실행
 ```sh
     cd hall
     mvn spring-boot:run  
@@ -96,7 +96,7 @@
     mvn spring-boot:run
 ```
 
-* Gateway 적용 현황
+#### Gateway
 > API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 Gateay를 적용하였다.
     
 	server:
@@ -176,11 +176,14 @@
 	server:
 	port: 8080
     
-* DDD 적용
+#### Correlation, Req/Resp
 
-> MSAEZ.io를 통하여 도출된 Aggregate는 Entity로 선언하여 PRE/POST PERSIST/UPDATE/DELETE 반영하였으며, Repository Pattern을 적용하여 ACID를 구현하였다.
+>  API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
+> 컴포넌트 간 API 호출 방식은 Req/Resp와 Pub/Sub 으로 구성되어 있으며 컴포넌트간 요청과 응답을 API 별로 구분이 가능하며
+> 시스템 전반에 걸쳐 일관되게 추적할 수 있다.
+> 또한, 본 과제에서는 MSAEZ.io를 통하여 도출된 Aggregate는 Entity로 선언하여 PRE/POST PERSIST/UPDATE/DELETE 반영하였으며, Repository Pattern을 적용하여 ACID를 구현하였다.
 
-- hall 서비스의 Hall.java
+* hall 서비스의 Hall.java
 
 	package gbike;
 
@@ -310,7 +313,7 @@
 	}
 
 
-- kitchen 서비스의 PolicyHandler.java
+* kitchen 서비스의 PolicyHandler.java
 
 	package gbike;
 
@@ -348,7 +351,7 @@
 
 	}
 
-## Polyglot 프로그래밍
+#### Polyglot 프로그래밍
 
 > hall 서비스와 기타 bike, billing, bikeDepository 등 서비스는  다른 DB를 사용하여 폴리글랏을 만족시키고 있다.
 
@@ -359,12 +362,15 @@
 * 기타 service의 pom.xml DB 설정 코드
 
   ![image](https://user-images.githubusercontent.com/82796103/120737496-1dd8a380-c529-11eb-907a-7a8b1a3a8bcd.png)
-  
+
+
+
 ## 시나리오 검증
 > 시나리오 검증을 위한 스크립트는 아래와 같다.
 
+
 #### 초기데이터 구축
-> 초기 데이터는 아래와 같이 정의하였다.
+> 초기 데이터는 아래와 같이 같다.
 
     [UserDeposit 등록]
     http POST http://20.194.44.70:8080/userDeposits userid=1 deposit=100000
@@ -439,6 +445,8 @@
 
 
 ## 운영
+> 운영에 필요한 검증항목은 다음과 같다.
+
 #### namespace 생성
 ```sh
 	  kubectl create ns e-restaurant
@@ -446,12 +454,12 @@
 
 #### Deploy / Pipeline
 
-- git에서 소스 가져오기
+* git에서 소스 가져오기
 ```sh
 	git clone https:/github.com/choiyeonshik/e-restaurant.git
 ```
 
-- Build 하기
+* Build 하기
 ```sh
 	cd /home/project/e-restaurant/hall
 	mvn clean
@@ -479,7 +487,7 @@
 	mvn package
 ```
 
-- Docker Image Push/deploy/서비스생성
+* Docker Image Push/deploy/서비스생성
 ```sh
 	cd /home/project/gbike/bike
 	az acr build --registry skcc1team --image skcc1team.azurecr.io/bike:latest .
@@ -512,18 +520,18 @@
 	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n gbike
 ```
 
-- yml파일 이용한 deploy
+* yml파일 이용한 deploy
 ```sh
 	cd /home/project/gbike/rent
 	kubectl apply -f ./kubernetes/deployment.yml -n gbike
 ```
 
-- deployment.yml 파일
+* deployment.yml 파일
 
 ![image](https://user-images.githubusercontent.com/82796103/121019311-43d89f00-c7da-11eb-8744-7c42d81baca4.png)
 
 
-- Deploy 완료
+* Deploy 완료
 
 ![image](https://user-images.githubusercontent.com/82796103/121105067-479e0d00-c83e-11eb-93a6-4a051d7eb45f.png)
 
@@ -532,21 +540,21 @@
 #### ConfigMap 적용
 >	시스템별로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리한다.
 	
-- application.yml 파일에 ${api.url.bikeservice} 설정
+* application.yml 파일에 ${api.url.bikeservice} 설정
 ![image](https://user-images.githubusercontent.com/82796103/121114706-1c6fe980-c84f-11eb-8e86-024a6e33a3e8.png)
 
 ![image](https://user-images.githubusercontent.com/82796103/121021504-6cfa2f00-c7dc-11eb-9269-528765e63ab1.png)
 
-- deployment-config.yaml
+* deployment-config.yaml
 ![image](https://user-images.githubusercontent.com/82796103/121037602-8a35fa00-c7ea-11eb-889e-d8a03ae445b6.png)
 
-- configMap 
+* configMap 
 ![image](https://user-images.githubusercontent.com/82796103/121039821-61166900-c7ec-11eb-9c88-a9bb5221f924.png)
 
 
 #### Autoscale (HPA)
 
-- 부하 테스트 siege Pod 설치
+* 부하 테스트 siege Pod 설치
 ```sh
 	kubectl apply -f - <<EOF
 	apiVersion: v1
@@ -560,7 +568,7 @@
 	EOF
 ```
 
-- Auto Scale-Out 설정
+* Auto Scale-Out 설정
   - deployment.yml 파일 수정
 ```sh
         resources:
@@ -575,7 +583,7 @@
 	kubectl autoscale deployment bike --cpu-percent=20 --min=1 --max=3 -n gbike
 ```
 
-- Auto Scale Out 확인
+* Auto Scale Out 확인
 
   - 부하 시작 (siege) : 동시접속 100명, 120초 동안 
 ```sh
@@ -591,13 +599,13 @@
 
 #### Circuit Breaker
 
-- 서킷 브레이킹 프레임워크의 선택 : Spring FeignClient + Hystrix 옵션을 사용하여 구현함
+> 서킷 브레이킹 프레임워크의 선택 : Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
-- Hystrix를 설정 : 요청처리 쓰레드에서 처리시간이 1200 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록(요청을 빠르게 실패처리, 차단) 설정
+* Hystrix를 설정
 
-- 동기 호출 주체인 Rent 서비스에 Hystrix 설정
-
-- rent/src/main/resources/application.yml 파일
+  - 요청처리 쓰레드에서 처리시간이 1200 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록(요청을 빠르게 실패처리, 차단) 설정
+  - 동기 호출 주체인 Rent 서비스에 Hystrix 설정
+  - rent/src/main/resources/application.yml 파일
 
 ```sh
 	feign:
@@ -609,15 +617,15 @@
 		  execution.isolation.thread.timeoutInMilliseconds: 1200
 ```
 
-- 부하에 대한 지연시간 발생코드 BikeController.java 지연 적용
+* 부하에 대한 지연시간 발생코드 BikeController.java 지연 적용
 
 ![circuit](https://user-images.githubusercontent.com/82795748/121125003-c9069700-c860-11eb-9a4f-1ffb5e20a550.jpg)
 
-- 부하 테스터 siege툴을 통한 서킷 브레이커 동작확인 : 동시 사용자 5명, 10초 동안 실시
+* 부하 테스터 siege툴을 통한 서킷 브레이커 동작확인 : 동시 사용자 5명, 10초 동안 실시
 
 	siege -c5 -t10S -r10 -v --content-type "application/json" 'http://20.194.44.70:8080/rents POST {"bikeid": "1", "userid": "1"}'
 
-- 결과
+* 결과
 
 ![image](https://user-images.githubusercontent.com/82796103/121124344-b9d31980-c85f-11eb-9d9b-2778f3fcb06a.png)
 
@@ -627,12 +635,12 @@
 
 #### Self-healing (Liveness Probe)
 
-- userdeposit 서비스 정상 확인
+* userdeposit 서비스 정상 확인
 
 ![liveness1](https://user-images.githubusercontent.com/84724396/121038124-fdd80700-c7ea-11eb-9063-ce9360b36278.PNG)
 
 
-- deployment.yml 에 Liveness Probe 옵션 추가
+* deployment.yml 에 Liveness Probe 옵션 추가
 ```sh
 cd ~/gbike/userDeposit
 vi deployment.yml
@@ -650,7 +658,7 @@ vi deployment.yml
 
 
 
-- gbike pod에 liveness가 적용된 부분 확인
+* gbike pod에 liveness가 적용된 부분 확인
 ```sh
   kubectl describe deploy userdeposit -n gbike
 ```
@@ -658,27 +666,27 @@ vi deployment.yml
 ![liveness42](https://user-images.githubusercontent.com/84724396/121044305-65448580-c7f0-11eb-9d1a-29b4b0118904.PNG)
 
 
-- userdeposit 서비스의 liveness가 발동되어 2번 retry 시도 한 부분 확인
+* userdeposit 서비스의 liveness가 발동되어 2번 retry 시도 한 부분 확인
 
 ![image](https://user-images.githubusercontent.com/84724396/121130881-fa379500-c869-11eb-9921-b24701660a72.png)
 
 
 #### Zero-downtime deploy (readiness probe)
 
-- readiness 옵션 제거 후 배포 - 신규 Pod 생성 시 downtime 발생
+* readiness 옵션 제거 후 배포 - 신규 Pod 생성 시 downtime 발생
 
 ![image](https://user-images.githubusercontent.com/82795726/121106857-d06a7800-c841-11eb-85cd-d7ad08ff62db.png)
 
-- readiness 옵션 추가하여 배포
+* readiness 옵션 추가하여 배포
 
 ![image](https://user-images.githubusercontent.com/82795726/121106445-fc392e00-c840-11eb-9b8c-b413ef06b95e.png)
 
 ![image](https://user-images.githubusercontent.com/82795726/121106524-225ece00-c841-11eb-9953-2febeab82108.png)
 
-- Pod Describe에 Readiness 설정 확인
+* Pod Describe에 Readiness 설정 확인
 
 ![image](https://user-images.githubusercontent.com/82795726/121110068-a61bb900-c847-11eb-9229-63701496846a.png)
 
-- 기존 버전과 새 버전의  pod 공존
+* 기존 버전과 새 버전의  pod 공존
 
 ![image](https://user-images.githubusercontent.com/82795726/121109942-6e147600-c847-11eb-9dae-9dfce13e8c62.png)
