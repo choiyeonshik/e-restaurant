@@ -178,9 +178,12 @@
     
 #### Correlation, Req/Resp
 
->  API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
+> API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
+
 > 컴포넌트 간 API 호출 방식은 Req/Resp와 Pub/Sub 으로 구성되어 있으며 컴포넌트간 요청과 응답을 API 별로 구분이 가능하며
+
 > 시스템 전반에 걸쳐 일관되게 추적할 수 있다.
+
 > 또한, 본 과제에서는 MSAEZ.io를 통하여 도출된 Aggregate는 Entity로 선언하여 PRE/POST PERSIST/UPDATE/DELETE 반영하였으며, Repository Pattern을 적용하여 ACID를 구현하였다.
 
 * hall 서비스의 Hall.java
