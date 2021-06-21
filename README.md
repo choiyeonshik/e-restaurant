@@ -2,21 +2,21 @@
 
 ---------------------------------------
 
-## 체크포인트
-```
-  1. Saga
-  2. CQRS
-  3. Correlation
-  4. Req/Resp
-  5. Gateway
-  6. Deploy/ Pipeline
-  7. Circuit Breaker
-  8. Autoscale (HPA)
-  9. Zero-downtime deploy (Readiness Probe)
-  10. Config Map/ Persistence Volume
-  11. Polyglot
-  12. Self-healing (Liveness Probe)
-```
+## 0. 체크포인트
+
+* Saga
+* CQRS
+* Correlation
+* Req/Resp
+* Gateway
+* Deploy/ Pipeline
+* Circuit Breaker
+* Autoscale (HPA)
+* Zero-downtime deploy (Readiness Probe)
+* Config Map/ Persistence Volume
+* Polyglot
+* Self-healing (Liveness Probe)
+
 ---------------------------------------
 
 ## 1. 시나리오
