@@ -38,19 +38,27 @@
 
 ## 분석/설계
 
-* Event Storming 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
+### Event Storming
+
+*결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
 
-### Event 도출
+#### Event 도출
 
 ![image](https://user-images.githubusercontent.com/82796103/122709738-d3ca1e80-d299-11eb-9e2d-4910082141bb.png)
 
 
-### 부적격 Event 탈락
+#### 부적격 Event 탈락
 
 ![image](https://user-images.githubusercontent.com/82796103/122709754-df1d4a00-d299-11eb-95ba-3417f791e64f.png)
 
-### 완성된 모형
+#### 완성된 모형
 
 ![image](https://user-images.githubusercontent.com/82796103/122709917-30c5d480-d29a-11eb-94ce-43be118641f3.png)
+
+
+### Hexagonal Architecture 설계
+
+![image](https://user-images.githubusercontent.com/82796103/122718453-ed726280-d2a7-11eb-9078-175c5b87092f.png)
+
 
