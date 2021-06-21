@@ -1,7 +1,7 @@
 # e-restaurant
 
 
-#e-restaurant 시나리오
+## 시나리오
 
 1.기능적 요구사항
   1.1. 사원은 사원증을 타각하여 음식을 주문한다.
@@ -21,7 +21,7 @@
   - Main Service의 성능에 영향이 없도록 사용자 주문상태를 조회할 수 있도록 View를 제공한다.
 
 
-#체크포인트
+## 체크포인트
 
 
 1. Saga
@@ -37,14 +37,14 @@
 11.Polyglot
 12.Self-healing (Liveness Probe)
 
-#분석/설계
+## 분석/설계
 
 Event Storming 결과
 이벤트스토밍 결과: http://www.msaez.io/#/storming/prssBIL3V4WW7AwMrfdCgM5LT0e2/mine/d060c00f74a577af42b2ff4fdfd84c96
 
 
-##Event 도출
+### Event 도출
 
 
-##부적격 Event 탈락
+### 부적격 Event 탈락
 
