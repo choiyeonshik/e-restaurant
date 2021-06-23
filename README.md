@@ -191,82 +191,81 @@ http GET http://20.194.44.70:8080/billings
 #### 3.2. Gateway
 > API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 Gateay를 적용하였다.
 ```
-	server:
-	port: 8088
-	
-	---
-	
-	spring:
-	profiles: default
-	cloud:
-		gateway:
-		routes:
-			- id: hall
-			uri: http://localhost:8081
-			predicates:
-				- Path=/halls/** 
-			- id: kitchen
-			uri: http://localhost:8082
-			predicates:
-				- Path=/kitchens/** 
-			- id: payment
-			uri: http://localhost:8083
-			predicates:
-				- Path=/payments/** 
-			- id: workercenter
-			uri: http://localhost:8084
-			predicates:
-				- Path=/workercenters/** 
+server:
+  port: 8088
 
-		globalcors:
-			corsConfigurations:
-			'[/**]':
-				allowedOrigins:
-				- "*"
-				allowedMethods:
-				- "*"
-				allowedHeaders:
-				- "*"
-				allowCredentials: true
-	
-	
-	---
-	
-	spring:
-	profiles: docker
-	cloud:
-		gateway:
-		routes:
-			- id: hall
-			uri: http://hall:8080
-			predicates:
-				- Path=/halls/** 
-			- id: kitchen
-			uri: http://kitchen:8080
-			predicates:
-				- Path=/kitchens/** 
-			- id: payment
-			uri: http://payment:8080
-			predicates:
-				- Path=/payments/** 
-			- id: workercenter
-			uri: http://workercenter:8080
-			predicates:
-				- Path=/workercenters/** 
+---
 
-		globalcors:
-			corsConfigurations:
-			'[/**]':
-				allowedOrigins:
-				- "*"
-				allowedMethods:
-				- "*"
-				allowedHeaders:
-				- "*"
-				allowCredentials: true
-	
-	server:
-	port: 8080
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: hall
+          uri: http://localhost:8081
+          predicates:
+            - Path=/orders/** 
+        - id: kitchen
+          uri: http://localhost:8082
+          predicates:
+            - Path=/cooks/** 
+        - id: workercenter
+          uri: http://localhost:8083
+          predicates:
+            - Path= /mypages/**
+        - id: payment
+          uri: http://localhost:8084
+          predicates:
+            - Path=/payments/** 
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+
+---
+
+spring:
+  profiles: docker
+  cloud:
+    gateway:
+      routes:
+        - id: hall
+          uri: http://hall:8080
+          predicates:
+            - Path=/orders/** 
+        - id: kitchen
+          uri: http://kitchen:8080
+          predicates:
+            - Path=/cooks/** 
+        - id: workercenter
+          uri: http://workercenter:8080
+          predicates:
+            - Path= /mypages/**
+        - id: payment
+          uri: http://payment:8080
+          predicates:
+            - Path=/payments/** 
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+server:
+  port: 8080
+
 ```
 
 #### 3.3. Correlation, Req/Resp
