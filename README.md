@@ -712,20 +712,31 @@ siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders 
 
 #### 4.7. Zero-downtime deploy (readiness probe)
 
-* readiness 옵션 제거 후 배포 - 신규 Pod 생성 시 downtime 발생
+> hall 서비스 배포 중 정상동작하는 지 확인한다.
 
-![image](https://user-images.githubusercontent.com/82795726/121106857-d06a7800-c841-11eb-85cd-d7ad08ff62db.png)
-
-* readiness 옵션 추가하여 배포
-
-![image](https://user-images.githubusercontent.com/82795726/121106445-fc392e00-c840-11eb-9b8c-b413ef06b95e.png)
-
-![image](https://user-images.githubusercontent.com/82795726/121106524-225ece00-c841-11eb-9953-2febeab82108.png)
+* deployment.yml 에 Readiness Probe 옵션
+```sh
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+```
+![image](https://user-images.githubusercontent.com/82796103/123288864-e6b74a00-d54a-11eb-8d66-021b6b339c18.png)
 
 * Pod Describe에 Readiness 설정 확인
 
-![image](https://user-images.githubusercontent.com/82795726/121110068-a61bb900-c847-11eb-9229-63701496846a.png)
+![image](https://user-images.githubusercontent.com/82796103/123289670-9f7d8900-d54b-11eb-8df6-65027f727e95.png)
 
-* 기존 버전과 새 버전의  pod 공존
+* 기존 버전과 새 버전의 pod 공존
+> 배포 중 서비스 중단없이 running 완료
+```
+kubectl apply -f kubernetes/deployment.yml -n choi
 
-![image](https://user-images.githubusercontent.com/82795726/121109942-6e147600-c847-11eb-9dae-9dfce13e8c62.png)
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c1 -t10S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"돈까스", "menuname":"5500"}'
+```
+![image](https://user-images.githubusercontent.com/82796103/123291609-36971080-d54d-11eb-9879-17d440c17669.png)
