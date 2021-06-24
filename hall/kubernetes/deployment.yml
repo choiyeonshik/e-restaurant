@@ -19,6 +19,17 @@ spec:
           image: skccuser23.azurecr.io/hall:v2
           ports:
             - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
+          env:
+            - name: CONFIGMAP_KITCHEN_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: configmap-url
+                  key: CONFIGMAP_KITCHEN_URL
           readinessProbe:
             httpGet:
               path: '/actuator/health'

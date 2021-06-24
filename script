@@ -32,18 +32,19 @@ mvn spring-boot:run
 #시나리오 검증
 #========================================================================================
 ###[주문]
-http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
-http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개" amount=4500
-http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스" amount=6000
+http POST http://52.231.200.152:8080/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
+http POST http://52.231.200.152:8080/orders employeeCardNo=2 menuname="김치찌개" amount=4500
+http POST http://52.231.200.152:8080/orders employeeCardNo=3 menuname="돈까스" amount=6000
+http POST http://52.231.200.152:8080/orders employeeCardNo=4 menuname="양고기" amount=86000
 
 ###[요리 및 결제]
-http PATCH http://localhost:8088/cooks/1 status="요리완료"
+http PATCH http://52.231.200.152:8080/cooks/1 status="요리완료"
 
 ###[확인]
-http GET http://localhost:8088/orders
-http GET http://localhost:8088/cooks
-http GET http://localhost:8088/payments
-http GET http://localhost:8088/mypages
+http GET http://52.231.200.152:8080/orders
+http GET http://52.231.200.152:8080/cooks
+http GET http://52.231.200.152:8080/payments
+http GET http://52.231.200.152:8080/mypages
 
 #========================================================================================
 [helm 설치(v3.6.1)]
@@ -140,10 +141,10 @@ mvn compile
 mvn package
 
 #이미지 build & push & Deploy
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
-kubectl create deploy hall --image=skccuser23.azurecr.io/hall:v2 -n choi
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v9 .
+kubectl create deploy hall --image=skccuser23.azurecr.io/hall:v8 -n choi
 
-kubectl delete deployment,pod,service hall -n choi
+kubectl delete --all deployment,pod,service hall -n choi
 
 kubectl describe pod/hall-7cbb9cccb5-ckcd4 -n choi
 kubectl logs -f pod/hall-68884b6b88-snqrs -c hall -n choi
@@ -160,8 +161,8 @@ mvn compile
 mvn package
 
 #이미지 build & push & Deploy
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
-kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v3 .
+kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v3 -n choi
 
 cd /home/project/e-restaurant/payment
 mvn clean
@@ -202,33 +203,65 @@ az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
 #kubectl apply -f ./kubernetes/deployment.yml -n choi
 #kubectl apply -f ./kubernetes/service.yaml -n choi
 
+
+kubectl expose deploy hall --type=ClusterIP --port=8080 -n choi
+kubectl expose deploy kitchen --type=ClusterIP --port=8080 -n choi
+kubectl expose deploy payment --type=ClusterIP --port=8080 -n choi
+kubectl expose deploy workercenter --type=ClusterIP --port=8080 -n choi
 kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 
 #========================================================================================
-#Config Map
+#Config Map (application yaml 수정 -> deployment 적용 -> configmap 생성 순으로 진행)
 #========================================================================================
-kubectl create configmap configmap-bikeurl --from-file=/home/project/e-restaurant/hall/kubernetes/deployment-config.yaml -n choi
-#kubectl apply -f deployment-config.yaml -n choi
-#kubectl create configmap configmap-bikeurl --from-literal=bikeurl=http://hall:8080 -n choi
-kubectl get configmap configmap-bikeurl -o yaml -n choi
+kubectl create configmap configmap-url --from-literal=CONFIGMAP_KITCHEN_URL=http://kitchen:8080 -n choi
+kubectl get configmap configmap-url -o yaml -n choi
 
 #========================================================================================
 #Circuit Breaker
 #========================================================================================
-siege -c5 -t10S -r10 -v --content-type "application/json" 'http://20.194.44.70:8080/hall POST {"bikeid": "1", "userid": "1"}'
+cd /home/project/e-restaurant/hall
+mvn clean
+mvn compile
+mvn package
+
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v8 .
+kubectl apply -f ./kubernetes/deployment.yml -n choi
+
+#kubectl run siege --image=apexacme/siege-nginx -n choi
+#kubectl get pod -n choi
+
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"된장찌개", "menuname":"4500"}'
+
 
 #========================================================================================
-#무정지 재배포
+#AutoScale(HPA)
 #========================================================================================
-kubectl get all -n choi
+kubectl autoscale deployment hall --cpu-percent=20 --min=1 --max=3 -n choi
 
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v1 .
-kubectl apply -f kubernetes/deployment.yml -n choi
-kubectl get all -n choi
+kubectl run siege --image=apexacme/siege-nginx -n choi
+kubectl get pod -n choi
+
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c200 -t120S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "1", "menuname":"불고기덮밥", "menuname":"5000"}'
+
+#kubectl delete hpa hall
 
 #========================================================================================
-#기타
+#Liveness Probe
 #========================================================================================
 kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n choi
 
-kubectl apply -f deployment-config.yaml -n choi
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c1 -t30S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "4", "menuname":"돈까스", "menuname":"5500"}'
+
+
+#========================================================================================
+#Readiness Probe
+#========================================================================================
+kubectl apply -f kubernetes/deployment.yml -n choi
+
+kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n choi
+
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c1 -t10S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"된장찌개", "menuname":"4500"}'
