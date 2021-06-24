@@ -17,10 +17,10 @@ cd hall
 mvn spring-boot:run
 
 cd kitchen
-mvn spring-boot:run 
+mvn spring-boot:run
 
 cd payment
-mvn spring-boot:run  
+mvn spring-boot:run
 
 cd workercenter
 mvn spring-boot:run
@@ -36,6 +36,8 @@ http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮�
 http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개"
 http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스"
 
+###[요리]
+http PATCH http://localhost:8088/cooks/1 status="요리중"
 
 http GET http://localhost:8088/cooks
 http GET http://localhost:8088/payments
@@ -317,16 +319,3 @@ kubectl get all -n gbike
 kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n gbike
 
 kubectl apply -f deployment-config.yaml -n gbike
-© 2021 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
-Loading complete

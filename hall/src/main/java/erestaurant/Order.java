@@ -11,6 +11,7 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
     private Long orderid;
     private Long employeeCardNo;
     private String menuname;
@@ -38,12 +39,13 @@ public class Order {
 
         erestaurant.external.Cook cook = new erestaurant.external.Cook();
         
-        cook.setOrderid(this.employeeCardNo);
+        cook.setOrderid(System.currentTimeMillis());
 
         boolean result = HallApplication.applicationContext.getBean(erestaurant.external.CookService.class)
             .receive(cook);
 
             if (result) {
+                this.orderid = cook.getOrderid();
                 this.status = "주문중";
                 this.tagdate = new Date(System.currentTimeMillis());
             } else {
@@ -52,6 +54,14 @@ public class Order {
     }
     @PreUpdate
     public void onPreUpdate(){
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getOrderid() {

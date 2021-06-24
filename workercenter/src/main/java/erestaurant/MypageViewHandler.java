@@ -28,6 +28,8 @@ public class MypageViewHandler {
             mypage.setMenuname(ordered.getMenuname());
             mypage.setOrderid(ordered.getOrderid());
             mypage.setAmount(ordered.getAmount());
+            mypage.setCookingstatus("요리중");
+
             // view 레파지 토리에 save
             mypageRepository.save(mypage);
 

@@ -31,9 +31,10 @@ public class Cook {
     }
     @PreUpdate
     public void onPreUpdate(){
-        if ("요리중".equals(this.status)) {
-            this.status = "요리완료";
+        if ("요리완료".equals(this.status)) {
+            this.cookeddate = new Date(System.currentTimeMillis());
         } else if ("접수완료".equals(this.status)) {
+            this.cookeddate = new Date(System.currentTimeMillis());
             this.status = "요리완료";
         } else {
             this.status = "접수완료";
