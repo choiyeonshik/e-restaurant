@@ -567,19 +567,38 @@ public class PolicyHandler{
 
 
 #### 4.3. ConfigMap 적용
->	시스템별로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리한다.
-	
-* application.yml 파일에 ${api.url.bikeservice} 설정
-![image](https://user-images.githubusercontent.com/82796103/121114706-1c6fe980-c84f-11eb-8e86-024a6e33a3e8.png)
+> 시스템별로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리한다.
 
-![image](https://user-images.githubusercontent.com/82796103/121021504-6cfa2f00-c7dc-11eb-9269-528765e63ab1.png)
+  * application.yml 파일에 ${app.feignclient.url.kitchen} 설정
+![image](https://user-images.githubusercontent.com/82796103/123221282-bf8c5880-d509-11eb-89a2-aa08a02b73d5.png)
 
-* deployment-config.yaml
-![image](https://user-images.githubusercontent.com/82796103/121037602-8a35fa00-c7ea-11eb-889e-d8a03ae445b6.png)
+    - CookService.java 에 hall 서비스가 kitchen 서비스 호출시 호출할 URL 설정
+```java
+package erestaurant.external;
 
-* configMap 
-![image](https://user-images.githubusercontent.com/82796103/121039821-61166900-c7ec-11eb-9c88-a9bb5221f924.png)
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
+@FeignClient(name="kitchen", url="${app.feignclient.url.kitchen}")
+public interface CookService {
+    
+    @RequestMapping(method= RequestMethod.GET, path="/cooks/requestCooking")
+    public String receive(@RequestBody Cook cook);
+
+}
+```
+
+  * deployment.yml
+```
+kubectl create configmap configmap-url --from-literal=CONFIGMAP_KITCHEN_URL=http://kitchen:8080 -n choi
+```
+![image](https://user-images.githubusercontent.com/82796103/123225331-9372d680-d50d-11eb-8fa1-6bbec0e59faf.png)
+
+  * configMap 
+
+![image](https://user-images.githubusercontent.com/82796103/123225514-c4530b80-d50d-11eb-889a-02a84b142acc.png)
 
 #### 4.4. Autoscale (HPA)
 
@@ -606,36 +625,34 @@ public class PolicyHandler{
           requests:
             cpu: 200m
 ```
+![image](https://user-images.githubusercontent.com/82796103/123234854-48a98c80-d516-11eb-8665-5fe7088ce0d6.png)
 
   - Auto Scale 설정
 ```sh
-	kubectl autoscale deployment bike --cpu-percent=20 --min=1 --max=3 -n gbike
+	kubectl autoscale deployment hall --cpu-percent=20 --min=1 --max=3 -n choi
 ```
+![image](https://user-images.githubusercontent.com/82796103/123236409-bbffce00-d517-11eb-9ab6-41df92dd42d0.png)
 
 * Auto Scale Out 확인
 
-  - 부하 시작 (siege) : 동시접속 100명, 120초 동안 
+  - 부하 시작 (siege) : 동시접속 200명, 120초 동안 
 ```sh
-	siege -c100 -t120S -v http://20.194.44.70:8080/bikes
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c200 -t120S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "1", "menuname":"불고기덮밥", "menuname":"5000"}'
 ```
-![autoscale1](https://user-images.githubusercontent.com/82795748/121107122-55559180-c842-11eb-8542-bbfef1463584.jpg)
+  - Scale out / in
 
-  - Scale out 확인
-
-![autoscale2](https://user-images.githubusercontent.com/82795748/121107303-a4032b80-c842-11eb-958c-a64e98bda3ce.jpg)
-
-![autoscale3](https://user-images.githubusercontent.com/82795748/121107154-643c4400-c842-11eb-9033-69c1a3114eb2.jpg)
-
+![image](https://user-images.githubusercontent.com/82796103/123237201-67a91e00-d518-11eb-8682-c1d0f6fc1d82.png)
+![image](https://user-images.githubusercontent.com/82796103/123244095-8dd1bc80-d51e-11eb-8b17-050377b65538.png)
 
 #### 4.5. Circuit Breaker
 
 > 서킷 브레이킹 프레임워크의 선택 : Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
 * Hystrix를 설정
-
-  - 요청처리 쓰레드에서 처리시간이 1200 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록(요청을 빠르게 실패처리, 차단) 설정
-  - 동기 호출 주체인 Rent 서비스에 Hystrix 설정
-  - rent/src/main/resources/application.yml 파일
+  - 요청처리 쓰레드에서 처리시간이 1200 밀리가 넘어서기 시작하여 어느정도 유지되면 CB가 닫히도록(요청을 빠르게 실패처리, 차단) 설정
+  - 동기 호출 주체인 hall 서비스에 Hystrix 설정
+  - hall 서비스 application.yml 파일 내용
 
 ```sh
 	feign:
@@ -647,59 +664,51 @@ public class PolicyHandler{
 		  execution.isolation.thread.timeoutInMilliseconds: 1200
 ```
 
-* 부하에 대한 지연시간 발생코드 BikeController.java 지연 적용
+* 부하에 대한 지연시간 발생코드 kitchen서비스의 CookController.java 지연 적용
 
-![circuit](https://user-images.githubusercontent.com/82795748/121125003-c9069700-c860-11eb-9a4f-1ffb5e20a550.jpg)
+![image](https://user-images.githubusercontent.com/82796103/123238642-9a074b00-d519-11eb-9508-0cc3c87949f6.png)
 
 * 부하 테스터 siege툴을 통한 서킷 브레이커 동작확인 : 동시 사용자 5명, 10초 동안 실시
-
-	siege -c5 -t10S -r10 -v --content-type "application/json" 'http://20.194.44.70:8080/rents POST {"bikeid": "1", "userid": "1"}'
+```
+kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
+siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"된장찌개", "menuname":"4500"}'
+```
 
 * 결과
 
-![image](https://user-images.githubusercontent.com/82796103/121124344-b9d31980-c85f-11eb-9d9b-2778f3fcb06a.png)
-
-![image](https://user-images.githubusercontent.com/82796103/121125220-2995d400-c861-11eb-96ef-01f771097e2e.png)
-
+![image](https://user-images.githubusercontent.com/82796103/123244975-5dd6e900-d51f-11eb-856e-eef4c2d32cd4.png)
 
 
 #### 4.6. Self-healing (Liveness Probe)
+> 정상동작 중인 hall pod의 health check port를 변경하여 강제로 재실행하도록 한 후 검증한다.
 
-* userdeposit 서비스 정상 확인
+* hall 서비스 정상 확인
 
-![liveness1](https://user-images.githubusercontent.com/84724396/121038124-fdd80700-c7ea-11eb-9063-ce9360b36278.PNG)
+![image](https://user-images.githubusercontent.com/82796103/123247294-b4ddbd80-d521-11eb-8c6c-03027c050ccc.png)
 
-
-* deployment.yml 에 Liveness Probe 옵션 추가
+* deployment.yml 에 Liveness Probe 옵션
+> 강제로 port를 8081변경하여 정상동작하는지 Test 한다.(정상포트는 8080 임)
 ```sh
-cd ~/gbike/userDeposit
-vi deployment.yml
-
-(아래 설정 변경)
           livenessProbe:
             httpGet:
               path: '/actuator/health'
               port: 8081
-            initialDelaySeconds: 3
+            initialDelaySeconds: 10
             periodSeconds: 5
 ```
-
-![liveness43](https://user-images.githubusercontent.com/84724396/121042427-a471d700-c7ee-11eb-9140-3e59ac801fed.PNG)
-
+![image](https://user-images.githubusercontent.com/82796103/123248486-f327ac80-d522-11eb-894a-eacc60e1c069.png)
 
 
-* gbike pod에 liveness가 적용된 부분 확인
+* hall pod에 liveness가 적용된 부분 확인
 ```sh
-  kubectl describe deploy userdeposit -n gbike
+  kubectl describe deploy hall -n choi
 ```
 
-![liveness42](https://user-images.githubusercontent.com/84724396/121044305-65448580-c7f0-11eb-9d1a-29b4b0118904.PNG)
+![image](https://user-images.githubusercontent.com/82796103/123248322-beb3f080-d522-11eb-8958-1538968e7917.png)
 
+* hall 서비스 restart 발생(재기동 중 오류 발생)
 
-* userdeposit 서비스의 liveness가 발동되어 2번 retry 시도 한 부분 확인
-
-![image](https://user-images.githubusercontent.com/84724396/121130881-fa379500-c869-11eb-9921-b24701660a72.png)
-
+![image](https://user-images.githubusercontent.com/82796103/123249323-caec7d80-d523-11eb-8b15-18bf40aac365.png)
 
 #### 4.7. Zero-downtime deploy (readiness probe)
 
