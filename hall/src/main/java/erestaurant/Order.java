@@ -39,6 +39,7 @@ public class Order {
 
         erestaurant.external.Cook cook = new erestaurant.external.Cook();
         
+        cook.setMenuname(this.menuname);
         cook.setOrderid(System.currentTimeMillis());
 
         boolean result = HallApplication.applicationContext.getBean(erestaurant.external.CookService.class)

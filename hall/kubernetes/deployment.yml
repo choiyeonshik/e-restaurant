@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hall
-          image: skccuser23.azurecr.io/hall:v1
+          image: skccuser23.azurecr.io/hall:v2
           ports:
             - containerPort: 8080
           readinessProbe:

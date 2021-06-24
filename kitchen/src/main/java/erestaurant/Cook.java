@@ -14,6 +14,7 @@ public class Cook {
     private Long orderid;
     private Date cookeddate;
     private String status;
+    private String menuname;
 
     @PostPersist
     public void onPostPersist(){
@@ -70,7 +71,12 @@ public class Cook {
         this.status = status;
     }
 
+    public String getMenuname() {
+        return menuname;
+    }
 
-
+    public void setMenuname(String menuname) {
+        this.menuname = menuname;
+    }
 
 }

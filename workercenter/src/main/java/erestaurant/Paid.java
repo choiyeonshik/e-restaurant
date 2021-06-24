@@ -36,4 +36,5 @@ public class Paid extends AbstractEvent {
 
     public void setPaymentid(Long paymentid) {
         this.paymentid = paymentid;
-    }}
+    }
+}

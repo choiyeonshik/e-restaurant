@@ -8,6 +8,7 @@ public class Cook {
     private Long orderid;
     private Date cookeddate;
     private String status;
+    private String menuname;
 
     public Long getCookid() {
         return cookid;
@@ -33,5 +34,11 @@ public class Cook {
     public void setStatus(String status) {
         this.status = status;
     }
+    public String getMenuname() {
+        return menuname;
+    }
 
+    public void setMenuname(String menuname) {
+        this.menuname = menuname;
+    }
 }

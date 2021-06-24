@@ -65,3 +65,7 @@ spring:
         event-out:
           destination: erestaurant
           contentType: application/json
+app:
+  feignclient:
+    url:
+      kitchen: http://kitchen:8080

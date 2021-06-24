@@ -22,21 +22,22 @@ import javax.servlet.http.HttpServletResponse;
         // public boolean receive(HttpServletRequest request, HttpServletResponse response) throws Exception {
         public boolean receive(@RequestBody Cook cook) throws Exception {
                 System.out.println("##### /cook/receive  called #####");
-                // System.out.println("#"+ request);
-                // System.out.println("#"+ request.getParameter("orderid"));
 
                 //서킷브레이커 시간지연
                 Thread.currentThread().sleep((long) (400 + Math.random() * 220));
 
                 boolean result;
+
                 try {
-                        // Cook cook = new Cook();
-                        // cook.setOrderid(Long.parseLong(request.getParameter("orderid")));
-                        cook.setStatus("접수완료");
+                        if ("양고기".equals(cook.getMenuname())) {
+                                result = false;
+                        } else {
+                                cook.setStatus("접수완료");
 
-                        cookRepository.save(cook);
-
-                        result = true;
+                                cookRepository.save(cook);
+        
+                                result = true;
+                        }
 
                 } catch (Exception e) {
                         result = false;
