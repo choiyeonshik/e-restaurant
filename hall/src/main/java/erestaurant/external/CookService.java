@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 public interface CookService {
     
     @RequestMapping(method= RequestMethod.GET, path="/cooks/requestCooking")
-    public boolean receive(@RequestBody Cook cook);
+    public String receive(@RequestBody Cook cook);
 
 }
 

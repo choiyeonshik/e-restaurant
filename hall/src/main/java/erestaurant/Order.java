@@ -42,15 +42,15 @@ public class Order {
         cook.setMenuname(this.menuname);
         cook.setOrderid(System.currentTimeMillis());
 
-        boolean result = HallApplication.applicationContext.getBean(erestaurant.external.CookService.class)
+        String result = HallApplication.applicationContext.getBean(erestaurant.external.CookService.class)
             .receive(cook);
 
-            if (result) {
+            if ("".equals(result)) {
                 this.orderid = cook.getOrderid();
                 this.status = "주문완료";
                 this.tagdate = new Date(System.currentTimeMillis());
             } else {
-                this.status = "주문중 오류발생";
+                this.status = result;
             }
     }
     @PreUpdate
