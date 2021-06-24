@@ -32,81 +32,20 @@ mvn spring-boot:run
 #시나리오 검증
 #========================================================================================
 ###[주문]
-http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥"
-http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개"
-http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스"
+http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
+http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개" amount=4500
+http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스" amount=6000
 
-###[요리]
-http PATCH http://localhost:8088/cooks/1 status="요리중"
+###[요리 및 결제]
+http PATCH http://localhost:8088/cooks/1 status="요리완료"
+http PATCH http://localhost:8088/cooks/2 status="요리완료"
+http PATCH http://localhost:8088/cooks/3 status="요리완료"
 
+###[확인]
+http GET http://localhost:8088/orders
 http GET http://localhost:8088/cooks
 http GET http://localhost:8088/payments
 http GET http://localhost:8088/mypages
-
-
-###[UserDeposit 확인]
-http GET http://20.194.44.70:8080/userDeposits
-
-###[Bike 등록]
-http POST http://20.194.44.70:8080/bikes bikeid=1 status=사용가능 location=분당_정자역_1구역
-http POST http://20.194.44.70:8080/bikes bikeid=2 status=사용중 location=분당_정자역_1구역
-http POST http://20.194.44.70:8080/bikes bikeid=3 status=불량 location=분당_정자역_1구역
-
-###[Bike 확인]
-http GET http://20.194.44.70:8080/bikes
-
-
-###[Rent - Rented Pub]
-[대여(rent) 전 확인]
-http GET http://20.194.44.70:8080/bikes
-http GET http://20.194.44.70:8080/rents
-http GET http://20.194.44.70:8080/userDeposits
-http GET http://20.194.44.70:8080/rentAndBillingViews
-http GET http://20.194.44.70:8080/billings
-
-###[대여(rent)]
-http POST http://20.194.44.70:8080/rents userid=1 bikeid=1
-
-[대여(rent) 및 CQRS - BikeDepository 확인]
-http GET http://20.194.44.70:8080/rents/1
-http GET http://20.194.44.70:8080/rentAndBillingViews
-
-###[반납(return)]
-http PATCH http://20.194.44.70:8080/rents/1 endlocation=분당_정자역_3구역
-
-###[반납(return) 후 확인]
-http GET http://20.194.44.70:8080/bikes
-http GET http://20.194.44.70:8080/rents
-http GET http://20.194.44.70:8080/userDeposits
-http GET http://20.194.44.70:8080/rentAndBillingViews
-http GET http://20.194.44.70:8080/billings
-
-###[Rent - Rent실패 케이스]
-http POST http://20.194.44.70:8080/rents bikeid=2 userid=2
-http POST http://20.194.44.70:8080/rents bikeid=3 userid=2
-
-
-
-###[데이터 초기화]
-http DELETE http://20.194.44.70:8080/billings/1
-http DELETE http://20.194.44.70:8080/billings/2
-http DELETE http://20.194.44.70:8080/billings/3
-
-http DELETE http://20.194.44.70:8080/rentAndBillingView/1
-http DELETE http://20.194.44.70:8080/rentAndBillingView/2
-http DELETE http://20.194.44.70:8080/rentAndBillingView/3
-
-http DELETE http://20.194.44.70:8080/bikes/1
-http DELETE http://20.194.44.70:8080/bikes/2
-http DELETE http://20.194.44.70:8080/bikes/3
-
-http DELETE http://20.194.44.70:8080/rents/1
-http DELETE http://20.194.44.70:8080/rents/2
-http DELETE http://20.194.44.70:8080/rents/3
-
-http DELETE http://20.194.44.70:8080/userDeposits/1
-http DELETE http://20.194.44.70:8080/userDeposits/2
-http DELETE http://20.194.44.70:8080/userDeposits/3
 
 #========================================================================================
 [KAFKA 설치]

@@ -1,6 +1,9 @@
 package erestaurant;
 
 import erestaurant.config.kafka.KafkaProcessor;
+
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -18,7 +21,8 @@ public class PolicyHandler{
         Payment payement = paymentRepository.findByOrderid(Long.valueOf(cooked.getOrderid()));
 
         payement.setCookid(cooked.getCookid());
-        payement.setStatus("요리완료");
+        payement.setPaiddate(new Date(System.currentTimeMillis()));
+        payement.setStatus("결제완료");
 
         paymentRepository.save(payement);
 
@@ -33,6 +37,7 @@ public class PolicyHandler{
         Payment payment = new Payment();
 
         payment.setStatus("주문완료");
+        payment.setMenuname(ordered.getMenuname());
         payment.setAmount(ordered.getAmount());
         payment.setOrderid(ordered.getOrderid());
 

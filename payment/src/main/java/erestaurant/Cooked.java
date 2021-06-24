@@ -8,6 +8,7 @@ public class Cooked extends AbstractEvent {
     private Long cookid;
     private Date cookeddate;
     private Long orderid;
+    private String status;
 
     public Long getCookid() {
         return cookid;
@@ -29,6 +30,13 @@ public class Cooked extends AbstractEvent {
 
     public void setOrderid(Long orderid) {
         this.orderid = orderid;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
 

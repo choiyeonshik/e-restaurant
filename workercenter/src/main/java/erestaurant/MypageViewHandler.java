@@ -40,19 +40,21 @@ public class MypageViewHandler {
 
 
     @StreamListener(KafkaProcessor.INPUT)
-    public void whenReceieved_then_UPDATE_1(@Payload Receieved receieved) {
+    public void whenReceieved_then_UPDATE_1(@Payload Cooked cooked) {
         try {
-            if (!receieved.validate()) return;
-                // view 객체 조회
+            if (!cooked.validate()) return;
 
-                    List<Mypage> mypageList = mypageRepository.findByCookid(receieved.getCookid());
-                    for(Mypage mypage : mypageList){
-                    // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    mypage.setCookid(receieved.getCookid());
-                    mypage.setCookingstatus(receieved.getStatus());
+            // view 객체 조회
+            List<Mypage> mypageList = mypageRepository.findByOrderid(cooked.getOrderid());
+            for(Mypage mypage : mypageList){
+                    
+                // view 객체에 이벤트의 eventDirectValue 를 set 함
+                mypage.setCookid(cooked.getCookid());
+                mypage.setCookingstatus(cooked.getStatus());
+
                 // view 레파지 토리에 save
                 mypageRepository.save(mypage);
-                }
+            }
 
         }catch (Exception e){
             e.printStackTrace();
@@ -62,16 +64,16 @@ public class MypageViewHandler {
     public void whenRegisteredPayInfo_then_UPDATE_2(@Payload RegisteredPayInfo registeredPayInfo) {
         try {
             if (!registeredPayInfo.validate()) return;
-                // view 객체 조회
 
-                    List<Mypage> mypageList = mypageRepository.findByPaymentid(registeredPayInfo.getPaymentid());
-                    for(Mypage mypage : mypageList){
-                    // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    mypage.setPaymentstatus(registeredPayInfo.getStatus());
-                    mypage.setAmount(registeredPayInfo.getAmount());
+            // view 객체 조회
+            List<Mypage> mypageList = mypageRepository.findByPaymentid(registeredPayInfo.getPaymentid());
+            for(Mypage mypage : mypageList){
+                // view 객체에 이벤트의 eventDirectValue 를 set 함
+                mypage.setPaymentstatus(registeredPayInfo.getStatus());
+                mypage.setAmount(registeredPayInfo.getAmount());
                 // view 레파지 토리에 save
                 mypageRepository.save(mypage);
-                }
+            }
 
         }catch (Exception e){
             e.printStackTrace();
@@ -81,16 +83,17 @@ public class MypageViewHandler {
     public void whenPaid_then_UPDATE_3(@Payload Paid paid) {
         try {
             if (!paid.validate()) return;
-                // view 객체 조회
 
-                    List<Mypage> mypageList = mypageRepository.findByCookid(paid.getCookid());
-                    for(Mypage mypage : mypageList){
-                    // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    mypage.setPaymentstatus(paid.getStatus());
-                    mypage.setPaiddate(paid.getPaiddate());
+            // view 객체 조회
+            List<Mypage> mypageList = mypageRepository.findByCookid(paid.getCookid());
+            for(Mypage mypage : mypageList){
+                // view 객체에 이벤트의 eventDirectValue 를 set 함
+                mypage.setPaymentid(paid.getPaymentid());
+                mypage.setPaymentstatus(paid.getStatus());
+                mypage.setPaiddate(paid.getPaiddate());
                 // view 레파지 토리에 save
                 mypageRepository.save(mypage);
-                }
+            }
 
         }catch (Exception e){
             e.printStackTrace();

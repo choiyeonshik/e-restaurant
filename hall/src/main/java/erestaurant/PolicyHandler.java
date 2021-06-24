@@ -1,8 +1,6 @@
 package erestaurant;
 
 import erestaurant.config.kafka.KafkaProcessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -16,8 +14,11 @@ public class PolicyHandler{
     public void wheneverCooked_SendMessage(@Payload Cooked cooked){
 
         if(!cooked.validate()) return;
-        // Get Methods
 
+        // Get Methods
+        Order order = orderRepository.findByOrderid(Long.valueOf(cooked.getOrderid()));
+        order.setStatus("문자발송");
+        orderRepository.save(order);
 
         // Sample Logic //
         System.out.println("\n\n##### listener SendMessage : " + cooked.toJson() + "\n\n");

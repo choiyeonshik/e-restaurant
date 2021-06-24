@@ -46,7 +46,7 @@ public class Order {
 
             if (result) {
                 this.orderid = cook.getOrderid();
-                this.status = "주문중";
+                this.status = "주문완료";
                 this.tagdate = new Date(System.currentTimeMillis());
             } else {
                 this.status = "주문중 오류발생";
