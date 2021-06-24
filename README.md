@@ -84,35 +84,7 @@
 
 > 각 서비스의 구현결과는 다음과 같다.
 
-#### 3.1. 서비스 실행
-
-> 각 서비스의 실행방법은 아래와 같이 총5개의 서비스로 구성되어 있으며 maven spring-boot를 이용하여 실행한다.
-> Azure Image Build/Push/deploy/서비스생성
-
-```sh
-cd /home/project/e-restaurant/hall
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
-kubectl create deploy hall --image=skccuser23.azurecr.io/bike:v2 -n choi
-
-cd /home/project/e-restaurant/kitchen
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
-kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
-
-cd /home/project/e-restaurant/payment
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
-kubectl create deploy payment --image=skccuser23.azurecr.io/payment:v1 -n choi
-
-cd /home/project/e-restaurant/workercenter
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
-kubectl create deploy workercenter --image=skccuser23.azurecr.io/workercenter:v1 -n choi
-
-cd /home/project/e-restaurant/gateway
-az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
-kubectl create deploy gateway --image=skccuser23.azurecr.io/gateway:v1 -n choi
-kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
-```
-
-#### 3.2. Gateway
+#### 3.1. Gateway
 > API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 Gateway를 적용하였다.
 > (포트넘버 : 8081 ~ 8084, 8088(집입점, Cloud 환경은 8080))
 
@@ -194,49 +166,77 @@ server:
 
 ```
 
-#### 3.3. 시나리오 검증
+#### 3.2. 시나리오 검증
 > 시나리오 검증을 위한 스크립트는 아래와 같다.
 
   * 주문
 ```
-http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
-http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개" amount=4500
-http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스" amount=6000
+http POST http://52.231.200.152:8080/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
 ``` 
   *
-    -  주문결과 Order와 Cook
-![image](https://user-images.githubusercontent.com/84724396/121111293-9309e880-c849-11eb-8e74-9263cf46e734.png)
+    -  주문결과 Hall
 
-  * 요리 및 결제
+![image](https://user-images.githubusercontent.com/82796103/123214584-5e14bb80-d502-11eb-885d-02385feaeef7.png)
+
+  *
+    -  주문결과 Kitchen
+
+![image](https://user-images.githubusercontent.com/82796103/123215176-15113700-d503-11eb-9a1d-947694f8b6b6.png)
+
+
+  * 요리완료
 ```
-http PATCH http://localhost:8088/cooks/1 status="요리완료"
+http PATCH http://52.231.200.152:8080/cooks/1 status="요리완료"
 ``` 
-  - 확인
+  *
+    -  요리결과 Kitchen
+
+![image](https://user-images.githubusercontent.com/82796103/123215262-3114d880-d503-11eb-9b43-afbf2fab8dfa.png)
+
+
+  * 확인
+    - hall 서비스
 ``` 
-http GET http://localhost:8088/orders
-http GET http://localhost:8088/cooks
-http GET http://localhost:8088/payments
-http GET http://localhost:8088/mypages
+http GET http://52.231.200.152:8080/orders
 ``` 
-![image](https://user-images.githubusercontent.com/84724396/121111431-d1070c80-c849-11eb-9de0-7e625c5a7c42.png)
+![image](https://user-images.githubusercontent.com/82796103/123215719-c1531d80-d503-11eb-81a5-10a8ad4a467d.png)
+
+  * 
+    - kitchen 서비스
+``` 
+http GET http://52.231.200.152:8080/cooks
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123215883-ec3d7180-d503-11eb-97f6-b6fda1a1c055.png)
+
+  * 
+    - payment 서비스
+``` 
+http GET http://52.231.200.152:8080/payments
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123216048-1858f280-d504-11eb-84fc-be33bb4c0edd.png)
+
 
   * 주문 불가 화면 (Request / Response)
-
+```
      양고기 주문시 에러 발생 
-     http POST http://localhost:8088/orders employeeCardNo=4 menuname="양고기" amount=86000
-
-![image](https://user-images.githubusercontent.com/84724396/121115300-e2ebae00-c84f-11eb-9266-8c05b0a3f2d3.png)
+     http POST http://52.231.200.152:8080/orders employeeCardNo=4 menuname="양고기" amount=86000
+```
+![image](https://user-images.githubusercontent.com/82796103/123218578-dd0bf300-d506-11eb-91d6-f09305e65d1e.png)
 
 
 #### 3.4. CQRS
-* 대여(rent) 후 rentAndBillingView 화면(CQRS) : rent한 정보를 조회할 수 있다.
-    http GET http://20.194.44.70:8080/rentAndBillingViews
+> hall, kitchen, payment 서비스의 데이터를 수집하여 View service를 제공한다.
+> 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 조회가 가능하도록 workercenter 서비스의 CQRS를 통하여  서비스를 구현하였다.
+> 사원의 주문 정보와 payment 정보 뿐만아니라, 요리결과도 조회할 수 있다. 
 
-![image](https://user-images.githubusercontent.com/84724396/121114171-34933900-c84e-11eb-98b6-b02faf2e5b6b.png)
+  * workercenter 서비스
+``` 
+http GET http://52.231.200.152:8080/mypages
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123216176-36beee00-d504-11eb-9f73-f064cec81746.png)
 
-    타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 조회가 가능하도록 rentAndBillingView 서비스의 CQRS를 통하여 Costomer Center 서비스를 구현하였다.
-    rentAndBillingView View를 통하여 사용자가 rental한 bike 정보와 billing 정보를 조회할 수 있으며 반납 후 billing 상태를 확인할 수 있다. 
 
+    
 
 #### 3.5. Correlation, Req/Resp
 
@@ -531,30 +531,30 @@ public class PolicyHandler{
 ```sh
 	cd /home/project/e-restaurant/hall
 	az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
-	kubectl create deploy hall --image=skccuser23.azurecr.io/bike:v2 -n choi
+	kubectl create -f ./kubernetes/deployment.yml -n choi
+	kubectl create -f ./kubernetes/service.yaml -n choi
 
 	cd /home/project/e-restaurant/kitchen
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
-	kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v2 .
+	kubectl create -f ./kubernetes/deployment.yml -n choi
+	kubectl create -f ./kubernetes/service.yaml -n choi
 
 	cd /home/project/e-restaurant/payment
 	az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
-	kubectl create deploy payment --image=skccuser23.azurecr.io/payment:v1 -n choi
+	kubectl create -f ./kubernetes/deployment.yml -n choi
+	kubectl create -f ./kubernetes/service.yaml -n choi
 
 	cd /home/project/e-restaurant/workercenter
 	az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
-	kubectl create deploy workercenter --image=skccuser23.azurecr.io/workercenter:v1 -n choi
+	kubectl create -f ./kubernetes/deployment.yml -n choi
+	kubectl create -f ./kubernetes/service.yaml -n choi
 
 	cd /home/project/e-restaurant/gateway
 	az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
-	kubectl create deploy gateway --image=skccuser23.azurecr.io/gateway:v1 -n choi
-	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
-```
+	kubectl create -f ./kubernetes/deployment.yml -n choi
+	kubectl create -f ./kubernetes/service.yaml -n choi
 
-* yml파일 이용한 deploy
-```sh
-	cd /home/project/e-restaurant/hall
-	kubectl apply -f ./kubernetes/deployment.yml -n choi
+	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 ```
 
 * deployment.yml 파일
