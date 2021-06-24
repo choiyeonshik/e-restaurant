@@ -48,32 +48,36 @@ http GET http://localhost:8088/payments
 http GET http://localhost:8088/mypages
 
 #========================================================================================
+[helm 설치(v3.6.1)]
+#========================================================================================
+root@labs-1501929124:/home/project#
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+
+#v3.6.1 설치 확인
+helm version
+
+#========================================================================================
 [KAFKA 설치]
 #========================================================================================
-#helm 설치 커맨드 <- v2.17.0 설치되어 있으므로 생략
-#curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
-#chmod 700 get_helm.sh
-#./get_helm.sh
-
-#v2.17.0 설치 확인
-helm version 
-
-curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-kubectl --namespace kube-system create sa tiller # helm 의 설치관리자를 위한 시스템 사용자 생성
+# helm 의 설치관리자를 위한 시스템 사용자 생성
+kubectl --namespace kube-system create sa tiller
 kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-helm init --service-account tiller
 
 helm repo add incubator https://charts.helm.sh/incubator
 helm repo update
+kubectl create ns kafka
 helm install --name my-kafka --namespace kafka incubator/kafka
 
+
 kubectl get namespace
-kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-zookeeper:2181 --topic gbike --create --partitions 3 --replication-factor 3
+kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-zookeeper:2181 --topic erestaurant --create --partitions 3 --replication-factor 3
 kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-zookeeper:2181 --list
 
 #확인
-kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-producer --broker-list my-kafka:9092 --topic gbike
-kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-consumer --bootstrap-server my-kafka:9092 --topic gbike --from-beginning
+kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-producer --broker-list my-kafka:9092 --topic erestaurant
+kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-consumer --bootstrap-server my-kafka:9092 --topic erestaurant --from-beginning
 
 helm del --purge my-kafka
 #----------------------------
