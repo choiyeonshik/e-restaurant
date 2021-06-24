@@ -9,18 +9,18 @@
 * Correlation
 * Req/Resp
 * Gateway
-* Deploy/ Pipeline
-* Circuit Breaker
-* Autoscale (HPA)
-* Zero-downtime deploy (Readiness Probe)
-* Config Map/ Persistence Volume
 * Polyglot
+* Deploy/ Pipeline
+* Config Map/ Persistence Volume
+* Autoscale (HPA)
+* Circuit Breaker
 * Self-healing (Liveness Probe)
+* Zero-downtime deploy (Readiness Probe)
 
 ---------------------------------------
 
 ## 1. 시나리오
->  사원은 구내식당에서 자신의 ID Card를 이용하여 점심 또는 저녁식사를 하고
+>  사원은 구내식당에서 자신의 ID Card를 이용하여 식사를 하고
 >
 >  비용은 급여에서 자동 차감되도록 서비스를 구현한다.
 
@@ -45,7 +45,13 @@
 
 ## 2. 분석/설계
 
->  MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 설계를 완성하였습니다.
+> MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 Event Storming을 진행하였습니다.
+> 먼저, Event, Actor와 Command, Policy 순으로 도출하고, Aggregate로 관련 Object를 하나로 묶었습니다.
+> 이후 Bounded Context를 정의하고 Micro Service를 구성하였으며 Service간 필요정보가 없는지
+> Attribute, Policy 중심으로 Inspection 하였습니다.
+>
+> Micro Service 간에는 Choreography SAGA, Orchestrator SAGA 패턴을 적용하였습니다.
+>(Pub/Sub, FeignClient(Req/Res) 구조)
 
 #### 2.1. Event Storming
 
@@ -72,19 +78,77 @@
 
 #### 2.2. Hexagonal Architecture 설계
 
-![image](https://user-images.githubusercontent.com/82796103/122718453-ed726280-d2a7-11eb-9078-175c5b87092f.png)
+![image](https://user-images.githubusercontent.com/82796103/123294242-a4dcd280-d54f-11eb-8e14-e29deffd0b3a.png)
 
 - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
 - Kafka를 이용하여 호출관계에서 Pub/Sub 구조로 설계하고  Feign CLient는 REST API를 이용한 Req/Resp 로 형식 구현함
-- Hall Service는 Hsql DB 셜계하였고 기타 Kitchen, Payment 서비스는 H2 DB 설계(Polyglot)
+- Hall Service는 Hsql DB 설계하였고 기타 Kitchen, Payment 서비스는 H2 DB로 설계 함
 
 ---------------------------------------
 
 ## 3. 구현
 
-> 각 서비스의 구현결과는 다음과 같다.
+> Micro Service 구현결과는 다음과 같다.
 
-#### 3.1. Gateway
+#### 3.1. 시나리오 검증
+> 시나리오 검증을 위한 스크립트는 아래와 같다.
+
+  * 주문
+```
+http POST http://52.231.200.152:8080/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
+``` 
+  *
+    -  주문결과 Hall
+
+![image](https://user-images.githubusercontent.com/82796103/123214584-5e14bb80-d502-11eb-885d-02385feaeef7.png)
+
+  *
+    -  주문결과 Kitchen
+
+![image](https://user-images.githubusercontent.com/82796103/123215176-15113700-d503-11eb-9a1d-947694f8b6b6.png)
+
+
+  * 요리완료
+```
+http PATCH http://52.231.200.152:8080/cooks/1 status="요리완료"
+``` 
+  *
+    -  요리결과 Kitchen
+
+![image](https://user-images.githubusercontent.com/82796103/123215262-3114d880-d503-11eb-9b43-afbf2fab8dfa.png)
+
+
+  * 확인
+    - hall 서비스
+``` 
+http GET http://52.231.200.152:8080/orders
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123215719-c1531d80-d503-11eb-81a5-10a8ad4a467d.png)
+
+  * 
+    - kitchen 서비스
+``` 
+http GET http://52.231.200.152:8080/cooks
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123215883-ec3d7180-d503-11eb-97f6-b6fda1a1c055.png)
+
+  * 
+    - payment 서비스
+``` 
+http GET http://52.231.200.152:8080/payments
+``` 
+![image](https://user-images.githubusercontent.com/82796103/123216048-1858f280-d504-11eb-84fc-be33bb4c0edd.png)
+
+
+  * 주문 불가 화면 (Request / Response)
+```
+     양고기 주문시 에러 발생 
+     http POST http://52.231.200.152:8080/orders employeeCardNo=4 menuname="양고기" amount=86000
+```
+![image](https://user-images.githubusercontent.com/82796103/123218578-dd0bf300-d506-11eb-91d6-f09305e65d1e.png)
+
+
+#### 3.2. Gateway
 > API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 Gateway를 적용하였다.
 > (포트넘버 : 8081 ~ 8084, 8088(집입점, Cloud 환경은 8080))
 
@@ -166,65 +230,8 @@ server:
 
 ```
 
-#### 3.2. 시나리오 검증
-> 시나리오 검증을 위한 스크립트는 아래와 같다.
 
-  * 주문
-```
-http POST http://52.231.200.152:8080/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
-``` 
-  *
-    -  주문결과 Hall
-
-![image](https://user-images.githubusercontent.com/82796103/123214584-5e14bb80-d502-11eb-885d-02385feaeef7.png)
-
-  *
-    -  주문결과 Kitchen
-
-![image](https://user-images.githubusercontent.com/82796103/123215176-15113700-d503-11eb-9a1d-947694f8b6b6.png)
-
-
-  * 요리완료
-```
-http PATCH http://52.231.200.152:8080/cooks/1 status="요리완료"
-``` 
-  *
-    -  요리결과 Kitchen
-
-![image](https://user-images.githubusercontent.com/82796103/123215262-3114d880-d503-11eb-9b43-afbf2fab8dfa.png)
-
-
-  * 확인
-    - hall 서비스
-``` 
-http GET http://52.231.200.152:8080/orders
-``` 
-![image](https://user-images.githubusercontent.com/82796103/123215719-c1531d80-d503-11eb-81a5-10a8ad4a467d.png)
-
-  * 
-    - kitchen 서비스
-``` 
-http GET http://52.231.200.152:8080/cooks
-``` 
-![image](https://user-images.githubusercontent.com/82796103/123215883-ec3d7180-d503-11eb-97f6-b6fda1a1c055.png)
-
-  * 
-    - payment 서비스
-``` 
-http GET http://52.231.200.152:8080/payments
-``` 
-![image](https://user-images.githubusercontent.com/82796103/123216048-1858f280-d504-11eb-84fc-be33bb4c0edd.png)
-
-
-  * 주문 불가 화면 (Request / Response)
-```
-     양고기 주문시 에러 발생 
-     http POST http://52.231.200.152:8080/orders employeeCardNo=4 menuname="양고기" amount=86000
-```
-![image](https://user-images.githubusercontent.com/82796103/123218578-dd0bf300-d506-11eb-91d6-f09305e65d1e.png)
-
-
-#### 3.4. CQRS
+#### 3.3. CQRS
 > hall, kitchen, payment 서비스의 데이터를 수집하여 View service를 제공한다.
 > 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이) 도 조회가 가능하도록 workercenter 서비스의 CQRS를 통하여  서비스를 구현하였다.
 > 사원의 주문 정보와 payment 정보 뿐만아니라, 요리결과도 조회할 수 있다. 
@@ -237,8 +244,7 @@ http GET http://52.231.200.152:8080/mypages
 
 
     
-
-#### 3.5. Correlation, Req/Resp
+#### 3.4. Correlation, Req/Resp
 
 > API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
 >
@@ -468,7 +474,7 @@ public class PolicyHandler{
 ```
 
 
-#### 3.6. Polyglot 프로그래밍
+#### 3.5. Polyglot 프로그래밍
 
 > hall 서비스의 Hsql DB와 기타 kitchen, payment, workercenter 등 서비스의  H2 DB를 사용하여 폴리글랏을 구현하였다.
 
@@ -485,7 +491,10 @@ public class PolicyHandler{
 ---------------------------------------
 
 ## 4. 운영
-> 운영에 필요한 검증항목은 다음과 같다.
+
+> 각 서비스에 필요한 Namespace를 별도로 생성 및 관리하며 소스는 github에서 clone한다.
+> 서비스 구동에 필요한 S/W는 별도의 Namespace로 구분하여 설치하였으며
+> 본 Micro Service를 위하여 choi namespace도 별도 생성하였다.
 
 #### 4.1. namespace 생성
 ```sh
@@ -493,6 +502,8 @@ public class PolicyHandler{
 ```
 
 #### 4.2 Deploy / Pipeline
+
+> gib hub에서 가져온 소스를 build 하여 Azure Repository에 등록한다.
 
 * git에서 소스 가져오기
 ```sh
@@ -529,32 +540,41 @@ public class PolicyHandler{
 
 * yml파일 이용한 deploy
 ```sh
-	cd /home/project/e-restaurant/hall
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
-	kubectl create -f ./kubernetes/deployment.yml -n choi
-	kubectl create -f ./kubernetes/service.yaml -n choi
-
-	cd /home/project/e-restaurant/kitchen
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v2 .
-	kubectl create -f ./kubernetes/deployment.yml -n choi
-	kubectl create -f ./kubernetes/service.yaml -n choi
-
-	cd /home/project/e-restaurant/payment
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
-	kubectl create -f ./kubernetes/deployment.yml -n choi
-	kubectl create -f ./kubernetes/service.yaml -n choi
-
-	cd /home/project/e-restaurant/workercenter
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
-	kubectl create -f ./kubernetes/deployment.yml -n choi
-	kubectl create -f ./kubernetes/service.yaml -n choi
-
-	cd /home/project/e-restaurant/gateway
-	az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
-	kubectl create -f ./kubernetes/deployment.yml -n choi
-	kubectl create -f ./kubernetes/service.yaml -n choi
-
-	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
+    cd /home/project/e-restaurant/hall
+    az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v1 .
+    
+    #초기 1회만 실행 
+    kubectl create deploy hall --image=skccuser23.azurecr.io/hall:v1 -n choi
+    
+    #이후
+    kubectl create -f ./kubernetes/deployment.yml -n choi
+    kubectl create -f ./kubernetes/service.yaml -n choi
+    
+    cd /home/project/e-restaurant/kitchen
+    az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
+    kubectl create -f ./kubernetes/deployment.yml -n choi
+    kubectl create -f ./kubernetes/service.yaml -n choi
+    
+    cd /home/project/e-restaurant/payment
+    az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
+    kubectl create -f ./kubernetes/deployment.yml -n choi
+    kubectl create -f ./kubernetes/service.yaml -n choi
+    
+    cd /home/project/e-restaurant/workercenter
+    az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
+    kubectl create -f ./kubernetes/deployment.yml -n choi
+    kubectl create -f ./kubernetes/service.yaml -n choi
+    
+    cd /home/project/e-restaurant/gateway
+    az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
+    kubectl create -f ./kubernetes/deployment.yml -n choi
+    kubectl create -f ./kubernetes/service.yaml -n choi
+    
+    kubectl expose deploy hall --type=ClusterIP --port=8080 -n choi
+    kubectl expose deploy kitchen --type=ClusterIP --port=8080 -n choi
+    kubectl expose deploy payment --type=ClusterIP --port=8080 -n choi
+    kubectl expose deploy workercenter --type=ClusterIP --port=8080 -n choi
+    kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 ```
 
 * deployment.yml 파일
@@ -562,6 +582,8 @@ public class PolicyHandler{
 ![image](https://user-images.githubusercontent.com/82796103/123209013-fd35b500-d4fa-11eb-9c3c-70a07eec65b6.png)
 
 * Deploy 완료
+
+>  replicaset, deployment, pod 모두 정상 동작 확인
 
 ![image](https://user-images.githubusercontent.com/82796103/123214131-cc0cb300-d501-11eb-9840-2bed6a2e5871.png)
 
@@ -590,17 +612,18 @@ public interface CookService {
 }
 ```
 
-  * deployment.yml
+  * deployment.yml 설정
+
+![image](https://user-images.githubusercontent.com/82796103/123225331-9372d680-d50d-11eb-8fa1-6bbec0e59faf.png)
+
+  * configMap 생성
 ```
 kubectl create configmap configmap-url --from-literal=CONFIGMAP_KITCHEN_URL=http://kitchen:8080 -n choi
 ```
-![image](https://user-images.githubusercontent.com/82796103/123225331-9372d680-d50d-11eb-8fa1-6bbec0e59faf.png)
-
-  * configMap 
-
 ![image](https://user-images.githubusercontent.com/82796103/123225514-c4530b80-d50d-11eb-889a-02a84b142acc.png)
 
 #### 4.4. Autoscale (HPA)
+> Autoscale 설정 후 siege를 통하여 pod 내부로 접속하여 부하를 발생시켜 검증하였습니다.
 
 * 부하 테스트 siege Pod 설치
 ```sh
@@ -668,7 +691,7 @@ siege -c200 -t120S -v --content-type "application/json" 'http://hall:8080/orders
 
 ![image](https://user-images.githubusercontent.com/82796103/123238642-9a074b00-d519-11eb-9508-0cc3c87949f6.png)
 
-* 부하 테스터 siege툴을 통한 서킷 브레이커 동작확인 : 동시 사용자 5명, 10초 동안 실시
+* 부하 테스터 siege툴을 통한 서킷 브레이커 동작확인 : 동시 사용자 10명, 120초 동안 실시
 ```
 kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
 siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"된장찌개", "menuname":"4500"}'
@@ -687,7 +710,7 @@ siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders 
 ![image](https://user-images.githubusercontent.com/82796103/123247294-b4ddbd80-d521-11eb-8c6c-03027c050ccc.png)
 
 * deployment.yml 에 Liveness Probe 옵션
-> 강제로 port를 8081변경하여 정상동작하는지 Test 한다.(정상포트는 8080 임)
+> 강제로 health check port를 8081변경하여 오동작을 유발한다.(정상포트는 8080 임)
 ```sh
           livenessProbe:
             httpGet:
@@ -706,13 +729,13 @@ siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders 
 
 ![image](https://user-images.githubusercontent.com/82796103/123248322-beb3f080-d522-11eb-8958-1538968e7917.png)
 
-* hall 서비스 restart 발생(재기동 중 오류 발생)
+* hall 서비스 지속적 restart 발생(이미지 우측의 hall pod restats 회수 확인)
 
 ![image](https://user-images.githubusercontent.com/82796103/123249323-caec7d80-d523-11eb-8b15-18bf40aac365.png)
 
 #### 4.7. Zero-downtime deploy (readiness probe)
 
-> hall 서비스 배포 중 정상동작하는 지 확인한다.
+> hall 서비스 배포 중 서비스가 정상동작하는 지 확인한다.
 
 * deployment.yml 에 Readiness Probe 옵션
 ```sh
@@ -728,14 +751,15 @@ siege -c10 -t120S -v --content-type "application/json" 'http://hall:8080/orders 
 ![image](https://user-images.githubusercontent.com/82796103/123288864-e6b74a00-d54a-11eb-8d66-021b6b339c18.png)
 
 * Pod Describe에 Readiness 설정 확인
-
+```
+kubectl apply -f kubernetes/deployment.yml -n choi
+kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n choi
+```
 ![image](https://user-images.githubusercontent.com/82796103/123289670-9f7d8900-d54b-11eb-8df6-65027f727e95.png)
 
 * 기존 버전과 새 버전의 pod 공존
 > 배포 중 서비스 중단없이 running 완료
 ```
-kubectl apply -f kubernetes/deployment.yml -n choi
-
 kubectl exec -it pod/siege-d484db9c-6f6h2 -c siege -n choi -- /bin/bash
 siege -c1 -t10S -v --content-type "application/json" 'http://hall:8080/orders POST {"employeeCardNo": "2", "menuname":"돈까스", "menuname":"5500"}'
 ```
