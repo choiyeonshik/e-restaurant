@@ -87,22 +87,29 @@
 #### 3.1. 서비스 실행
 
 > 각 서비스의 실행방법은 아래와 같이 총5개의 서비스로 구성되어 있으며 maven spring-boot를 이용하여 실행한다.
+> Azure Image Build/Push/deploy/서비스생성
 
 ```sh
-    cd hall
-    mvn spring-boot:run  
+cd /home/project/e-restaurant/hall
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
+kubectl create deploy hall --image=skccuser23.azurecr.io/bike:v2 -n choi
 
-    cd kitchen
-    mvn spring-boot:run
+cd /home/project/e-restaurant/kitchen
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
+kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
 
-    cd payment
-    mvn spring-boot:run 
+cd /home/project/e-restaurant/payment
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
+kubectl create deploy payment --image=skccuser23.azurecr.io/payment:v1 -n choi
 
-    cd workercenter
-    mvn spring-boot:run  
+cd /home/project/e-restaurant/workercenter
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
+kubectl create deploy workercenter --image=skccuser23.azurecr.io/workercenter:v1 -n choi
 
-    cd gateway
-    mvn spring-boot:run
+cd /home/project/e-restaurant/gateway
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
+kubectl create deploy gateway --image=skccuser23.azurecr.io/gateway:v1 -n choi
+kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 ```
 
 #### 3.2. Gateway
@@ -192,71 +199,36 @@ server:
 
   * 주문
 ```
-http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥"
-
+http POST http://localhost:8088/orders employeeCardNo=1 menuname="불고기덮밥" amount=5000
+http POST http://localhost:8088/orders employeeCardNo=2 menuname="김치찌개" amount=4500
+http POST http://localhost:8088/orders employeeCardNo=3 menuname="돈까스" amount=6000
 ``` 
-  -  UserDeposit 확인
-```
-http GET http://20.194.44.70:8080/userDeposits
-```
+  *
+    -  주문결과 Order와 Cook
 ![image](https://user-images.githubusercontent.com/84724396/121111293-9309e880-c849-11eb-8e74-9263cf46e734.png)
 
-  - Bike 등록
+  * 요리 및 결제
 ```
-http POST http://20.194.44.70:8080/bikes bikeid=1 status=사용가능 location=분당_정자역_1구역
-http POST http://20.194.44.70:8080/bikes bikeid=2 status=사용중 location=분당_정자역_1구역
-http POST http://20.194.44.70:8080/bikes bikeid=3 status=불량 location=분당_정자역_1구역
+http PATCH http://localhost:8088/cooks/1 status="요리완료"
 ``` 
-  - Bike 확인
+  - 확인
 ``` 
-http GET http://20.194.44.70:8080/bikes
+http GET http://localhost:8088/orders
+http GET http://localhost:8088/cooks
+http GET http://localhost:8088/payments
+http GET http://localhost:8088/mypages
 ``` 
 ![image](https://user-images.githubusercontent.com/84724396/121111431-d1070c80-c849-11eb-9de0-7e625c5a7c42.png)
 
-  - 자전거 대여
-    + 대여(rent) 화면
-```
-http POST http://20.194.44.70:8080/rents userid=1 bikeid=1
-```
-![image](https://user-images.githubusercontent.com/84724396/121114074-0e6d9900-c84e-11eb-970c-82c39fa6350d.png)
+  * 주문 불가 화면 (Request / Response)
 
-  - 
-    + 대여(rent) 후 bikes 화면 : 자전거 상태가 '사용 가능' -> '사용중' 으로 변경된다.     
-```
-     http GET http://20.194.44.70:8080/bikes
-```
-![사용중](https://user-images.githubusercontent.com/84724396/121121127-fd2a8980-c859-11eb-9955-54988c8b331e.PNG)
-  - 
-    + 대여(rent) 후 billings 화면 : bill이 하나 생성된다.
-```
-http GET http://20.194.44.70:8080/billings
-```
-![image](https://user-images.githubusercontent.com/84724396/121126700-901bf180-c863-11eb-9b92-22cc6d227ff4.png)
-
-
-- 자전거 대여 불가 화면 (Request / Response)
-
-     1. rent 신청를 하면 bike에서 자전거 상태를 체크하고 '사용 가능'일 때만 rent 가 성공한다.    
-     http POST http://20.194.44.70:8080/rents bikeid=2 userid=2
+     양고기 주문시 에러 발생 
+     http POST http://localhost:8088/orders employeeCardNo=4 menuname="양고기" amount=86000
 
 ![image](https://user-images.githubusercontent.com/84724396/121115300-e2ebae00-c84f-11eb-9266-8c05b0a3f2d3.png)
 
 
-![image](https://user-images.githubusercontent.com/84724396/121115456-10d0f280-c850-11eb-9377-c33ef6e31514.png)
-
-      2. 자전거 생태 체크를 하는 bike 서비스를 내리고 rent 신청을 하면 자전거 생태 체크를 할 수 없어 rent를 할 수 없다.
-
-![오류1](https://user-images.githubusercontent.com/84724396/121119465-a3749000-c856-11eb-8772-f00832f5c3fd.PNG)
-
-
-    위와 같이 Rent -> Bike -> Return -> Billing -> userDeposit 순으로 Sequence Flow 가 정상동작하는 것을 확인할 수 있다.
-    (대여불가 자전거는 예외)
-
-    대여 후 Status가 "사용중"으로, 반납하면 Status가 "사용가능"으로 Update 되는 것을 볼 수 있으며 반납이후 사용자의 예치금은 정산 후 차감된다.
-
-    또한 Correlation을 key를 활용하여 userid, rentid, bikeid, billid 등 원하는 값을 서비스간의 I/F를 통하여 서비스 간에 트랜잭션이 묶여 있음을 알 수 있다.
-
-#### 3.3. CQRS
+#### 3.4. CQRS
 * 대여(rent) 후 rentAndBillingView 화면(CQRS) : rent한 정보를 조회할 수 있다.
     http GET http://20.194.44.70:8080/rentAndBillingViews
 
@@ -266,7 +238,7 @@ http GET http://20.194.44.70:8080/billings
     rentAndBillingView View를 통하여 사용자가 rental한 bike 정보와 billing 정보를 조회할 수 있으며 반납 후 billing 상태를 확인할 수 있다. 
 
 
-#### 3.3. Correlation, Req/Resp
+#### 3.5. Correlation, Req/Resp
 
 > API 호출에 대한 식별자를 정의하고, 컴포넌트 간, 그 식별자를 공유하는 하도록 서비스 컴포넌트들은 각 비즈니스 모델에 맞는 Bounded Context 라는 도메인 모델의 경계를 이루며 동작하고 있다.
 >
@@ -275,186 +247,239 @@ http GET http://20.194.44.70:8080/billings
 >
 > 또한, 본 과제에서는 MSAEZ.io를 통하여 도출된 Aggregate는 Entity로 선언하여 PRE/POST PERSIST/UPDATE/DELETE 반영하였으며, Repository Pattern을 적용하여 ACID를 구현하였다.
 
-* hall 서비스의 Hall.java
+* hall 서비스의 Order.java
 ```java
-	package gbike;
+package erestaurant;
 
-	import javax.persistence.*;
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
 
-	import org.springframework.beans.BeanUtils;
-	import gbike.external.BikeService;
+import java.util.Date;
 
-	import java.util.Date;
+@Entity
+@Table(name="Order_table")
+public class Order {
 
-	@Entity
-	@Table(name = "Rent_table")
-	public class Rent {
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+    private Long orderid;
+    private Long employeeCardNo;
+    private String menuname;
+    private Date tagdate;
+    private Long amount;
+    private String status;
 
-	    @Id
-	    @GeneratedValue(strategy = GenerationType.AUTO)
-	    private Long rentid;
-	    private Long userid;
-	    private Long bikeid;
-	    private String status;
-	    private Date starttime;
-	    private Date endtime;
-	    private String endlocation;
+    @PostPersist
+    public void onPostPersist(){
+        Ordered ordered = new Ordered();
+        BeanUtils.copyProperties(this, ordered);
+        ordered.publishAfterCommit();
+    }
+    @PostUpdate
+    public void onPostUpdate(){
+        SentMessage sentMessage = new SentMessage();
+        BeanUtils.copyProperties(this, sentMessage);
+        sentMessage.publishAfterCommit();
 
-	    private static final String STATUS_RENTED = "rented";
-	    private static final String STATUS_RETURNED = "returned";
+    }
+    @PrePersist
+    public void onPrePersist(){
+        //Following code causes dependency to external APIs
+        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-	    @PrePersist
-	    public void onPrePersist() throws Exception {
-		//bike가 사용가능 상태인지 확인한다.
-		boolean result = RentApplication.applicationContext.getBean(gbike.external.BikeService.class)
-			.chkAndUpdateStatus(this.getBikeid());
-		System.out.println("bike.chkAndUpdateStatus --------  " + result);
-		if (result) {
-		    //bike가 사용가능 상태이므로, rent에 저장할 값을 set 한다. 
-		    this.starttime = new Date(System.currentTimeMillis());
-		    this.status = STATUS_RENTED;
-		    System.out.println("onPrePersist .... ");
-		} else {
-		    throw new Exception(" 자전거는 대여할 수 없는 상태입니다. " + this.getBikeid());
-		}
-	    }
+        erestaurant.external.Cook cook = new erestaurant.external.Cook();
+        
+        cook.setMenuname(this.menuname);
+        cook.setOrderid(System.currentTimeMillis());
 
-	    @PostPersist
-	    public void onPostPersist() {
-		//Rent를 저장했으므로, Rented 이벤트를 pub 한다. 
-		System.out.println("onPostPersist ....  rentid :: " + this.rentid);
-		Rented rented = new Rented();
-		BeanUtils.copyProperties(this, rented);
-		rented.publishAfterCommit();
-	    }
+        String result = HallApplication.applicationContext.getBean(erestaurant.external.CookService.class)
+            .receive(cook);
 
-	    @PreUpdate
-	    public void onPreUpdate() {
-		//Returned로 업데이트 할 때 저장할 값을 set 한다. 
-		System.out.println("onPreUpdate .... ");
-		this.endtime = new Date(System.currentTimeMillis());
-		this.status = STATUS_RETURNED;
-	    }
+            if ("".equals(result)) {
+                this.orderid = cook.getOrderid();
+                this.status = "주문완료";
+                this.tagdate = new Date(System.currentTimeMillis());
+            } else {
+                this.status = result;
+            }
+    }
+    @PreUpdate
+    public void onPreUpdate(){
+    }
 
-	    @PostUpdate
-	    public void onPostUpdate() {
-		//Rent를 returned 상태로 저장했으므로, Returned 이벤트를 pub 한다. 
-		System.out.println("onPostUpdate .... ");
-		Returned returned = new Returned();
-		BeanUtils.copyProperties(this, returned);
-		returned.publishAfterCommit();
-	    }
+    public Long getId() {
+        return id;
+    }
 
-	    public Long getRentid() {
-		return rentid;
-	    }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	    public void setRentid(Long rentid) {
-		this.rentid = rentid;
-	    }
+    public Long getOrderid() {
+        return orderid;
+    }
 
-	    public String getStatus() {
-		return status;
-	    }
+    public void setOrderid(Long orderid) {
+        this.orderid = orderid;
+    }
+    public Long getEmployeeCardNo() {
+        return employeeCardNo;
+    }
 
-	    public void setStatus(String status) {
-		this.status = status;
-	    }
+    public void setEmployeeCardNo(Long employeeCardNo) {
+        this.employeeCardNo = employeeCardNo;
+    }
+    public String getMenuname() {
+        return menuname;
+    }
 
-	    public Date getStarttime() {
-		return starttime;
-	    }
+    public void setMenuname(String menuname) {
+        this.menuname = menuname;
+    }
+    public Date getTagdate() {
+        return tagdate;
+    }
 
-	    public void setStarttime(Date starttime) {
-		this.starttime = starttime;
-	    }
+    public void setTagdate(Date tagdate) {
+        this.tagdate = tagdate;
+    }
+    public Long getAmount() {
+        return amount;
+    }
 
-	    public Date getEndtime() {
-		return endtime;
-	    }
+    public void setAmount(Long amount) {
+        this.amount = amount;
+    }
+    public String getStatus() {
+        return status;
+    }
 
-	    public void setEndtime(Date endtime) {
-		this.endtime = endtime;
-	    }
-
-	    public String getEndlocation() {
-		return endlocation;
-	    }
-
-	    public void setEndlocation(String endlocation) {
-		this.endlocation = endlocation;
-	    }
-
-	    public Long getUserid() {
-		return userid;
-	    }
-
-	    public void setUserid(Long userid) {
-		this.userid = userid;
-	    }
-
-	    public Long getBikeid() {
-		return bikeid;
-	    }
-
-	    public void setBikeid(Long bikeid) {
-		this.bikeid = bikeid;
-	    }
-
-
-	}
+    public void setStatus(String status) {
+        this.status = status;
+    }
+}
 ```
 
-* kitchen 서비스의 PolicyHandler.java
+* kitchen 서비스의 CookController.java
 ```java
-	package gbike;
+package erestaurant;
 
-	import gbike.config.kafka.KafkaProcessor;
-	import com.fasterxml.jackson.databind.DeserializationFeature;
-	import com.fasterxml.jackson.databind.ObjectMapper;
-	import org.springframework.beans.factory.annotation.Autowired;
-	import org.springframework.cloud.stream.annotation.StreamListener;
-	import org.springframework.messaging.handler.annotation.Payload;
-	import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-	@Service
-	public class PolicyHandler{
-		@Autowired BikeRepository bikeRepository;
+ @RestController
+ public class CookController {
 
-		@StreamListener(KafkaProcessor.INPUT)
-		public void wheneverReturned_UpdateStatusAndLoc(@Payload Returned returned){
+        @Autowired
+        CookRepository cookRepository;
 
-			if(returned.isMe()){
-				
-				Bike bike = bikeRepository.findByBikeid(Long.valueOf(returned.getBikeid()));
-				
-				//bike.setStatus(returned.getStatus());
-				bike.setStatus("사용가능");
-				bike.setLocation(returned.getEndlocation());
-				
-				bikeRepository.save(bike);
-			}
-				
-		}
+        @RequestMapping(value = "/cooks/requestCooking",
+                method = RequestMethod.POST,
+                produces = "application/json;charset=UTF-8")
 
-		@StreamListener(KafkaProcessor.INPUT)
-		public void whatever(@Payload String eventString){}
+        // public boolean receive(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        public String receive(@RequestBody Cook cook) throws Exception {
+                System.out.println("##### /cook/receive  called #####");
 
+                //서킷브레이커 시간지연
+                Thread.currentThread().sleep((long) (400 + Math.random() * 220));
 
-	}
+                String result;
+
+                try {
+                        if ("양고기".equals(cook.getMenuname())) {
+                                result = "양고기는 메뉴에 없습니다.";
+                        } else {
+                                cook.setStatus("접수완료");
+
+                                cookRepository.save(cook);
+        
+                                result = "";
+                        }
+
+                } catch (Exception e) {
+                        result = e.getMessage();
+                        e.printStackTrace();
+                }
+                return result;
+        }
+ }
 ```
 
-#### 3.4. Polyglot 프로그래밍
+* payment 서비스의 PolicyHandler.java
+```java
+package erestaurant;
 
-> hall 서비스의 Hsql DB와 기타 bike, billing, bikeDepository 등 서비스의  H2 DB를 사용하여 폴리글랏을 구현하였다.
+import erestaurant.config.kafka.KafkaProcessor;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PolicyHandler{
+    @Autowired PaymentRepository paymentRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverCooked_Pay(@Payload Cooked cooked){
+
+        if(!cooked.validate()) return;
+
+        Payment payement = paymentRepository.findByOrderid(Long.valueOf(cooked.getOrderid()));
+
+        payement.setCookid(cooked.getCookid());
+        payement.setPaiddate(new Date(System.currentTimeMillis()));
+        payement.setStatus("결제완료");
+
+        paymentRepository.save(payement);
+
+        // Sample Logic //
+        System.out.println("\n\n##### listener Pay : " + cooked.toJson() + "\n\n");
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverOrdered_RegisterPayInfo(@Payload Ordered ordered){
+
+        if(!ordered.validate()) return;
+        
+        Payment payment = new Payment();
+
+        payment.setStatus("주문완료");
+        payment.setMenuname(ordered.getMenuname());
+        payment.setAmount(ordered.getAmount());
+        payment.setOrderid(ordered.getOrderid());
+
+        paymentRepository.save(payment);
+
+        // Sample Logic //
+        System.out.println("\n\n##### listener RegisterPayInfo : " + ordered.toJson() + "\n\n");
+    }
+
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whatever(@Payload String eventString){}
+}
+```
+
+
+#### 3.6. Polyglot 프로그래밍
+
+> hall 서비스의 Hsql DB와 기타 kitchen, payment, workercenter 등 서비스의  H2 DB를 사용하여 폴리글랏을 구현하였다.
 
 * hall service의 pom.xml DB 설정 코드
 
-  ![image](https://user-images.githubusercontent.com/82796103/120737666-73ad4b80-c529-11eb-828e-f3089b929ca9.png)
+![image](https://user-images.githubusercontent.com/82796103/123209737-05dabb00-d4fc-11eb-88ef-32927f07779f.png)
 
 * 기타 service의 pom.xml DB 설정 코드
 
-  ![image](https://user-images.githubusercontent.com/82796103/120737496-1dd8a380-c529-11eb-907a-7a8b1a3a8bcd.png)
+![image](https://user-images.githubusercontent.com/82796103/123209807-1f7c0280-d4fc-11eb-84d9-47310e6074c1.png)
+
 
 
 ---------------------------------------
@@ -464,7 +489,7 @@ http GET http://20.194.44.70:8080/billings
 
 #### 4.1. namespace 생성
 ```sh
-	  kubectl create ns e-restaurant
+	  kubectl create ns choi
 ```
 
 #### 4.2 Deploy / Pipeline
@@ -502,54 +527,43 @@ http GET http://20.194.44.70:8080/billings
 	mvn package
 ```
 
-* Docker Image Push/deploy/서비스생성
+* yml파일 이용한 deploy
 ```sh
-	cd /home/project/gbike/bike
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/bike:latest .
-	kubectl create deploy bike --image=skcc1team.azurecr.io/bike:latest -n gbike
-	kubectl expose deploy bike --type=ClusterIP --port=8080 -n gbike
+	cd /home/project/e-restaurant/hall
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v2 .
+	kubectl create deploy hall --image=skccuser23.azurecr.io/bike:v2 -n choi
 
-	cd /home/project/gbike/billing
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/billing:latest .
-	kubectl create deploy billing --image=skcc1team.azurecr.io/billing:latest -n gbike
-	kubectl expose deploy billing --type=ClusterIP --port=8080 -n gbike
+	cd /home/project/e-restaurant/kitchen
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
+	kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
 
-	cd /home/project/gbike/rent
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/rent:latest .
-	kubectl create deploy rent --image=skcc1team.azurecr.io/rent:latest -n gbike
-	kubectl expose deploy rent --type=ClusterIP --port=8080 -n gbike
+	cd /home/project/e-restaurant/payment
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
+	kubectl create deploy payment --image=skccuser23.azurecr.io/payment:v1 -n choi
 
-	cd /home/project/gbike/rentAndBillingView
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/rentandbillingview:latest .
-	kubectl create deploy rentandbillingview --image=skcc1team.azurecr.io/rentandbillingview:latest -n gbike
-	kubectl expose deploy rentandbillingview --type=ClusterIP --port=8080 -n gbike
+	cd /home/project/e-restaurant/workercenter
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
+	kubectl create deploy workercenter --image=skccuser23.azurecr.io/workercenter:v1 -n choi
 
-	cd /home/project/gbike/userDeposit
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/userdeposit:latest .
-	kubectl create deploy userdeposit --image=skcc1team.azurecr.io/userdeposit:latest -n gbike
-	kubectl expose deploy userdeposit --type=ClusterIP --port=8080 -n gbike
-
-	cd /home/project/gbike/gateway
-	az acr build --registry skcc1team --image skcc1team.azurecr.io/gateway:latest .
-	kubectl create deploy gateway --image=skcc1team.azurecr.io/gateway:latest -n gbike
-	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n gbike
+	cd /home/project/e-restaurant/gateway
+	az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
+	kubectl create deploy gateway --image=skccuser23.azurecr.io/gateway:v1 -n choi
+	kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 ```
 
 * yml파일 이용한 deploy
 ```sh
-	cd /home/project/gbike/rent
-	kubectl apply -f ./kubernetes/deployment.yml -n gbike
+	cd /home/project/e-restaurant/hall
+	kubectl apply -f ./kubernetes/deployment.yml -n choi
 ```
 
 * deployment.yml 파일
 
-![image](https://user-images.githubusercontent.com/82796103/121019311-43d89f00-c7da-11eb-8744-7c42d81baca4.png)
-
+![image](https://user-images.githubusercontent.com/82796103/123209013-fd35b500-d4fa-11eb-9c3c-70a07eec65b6.png)
 
 * Deploy 완료
 
-![image](https://user-images.githubusercontent.com/82796103/121105067-479e0d00-c83e-11eb-93a6-4a051d7eb45f.png)
-
+![image](https://user-images.githubusercontent.com/82796103/123214131-cc0cb300-d501-11eb-9840-2bed6a2e5871.png)
 
 
 #### 4.3. ConfigMap 적용
