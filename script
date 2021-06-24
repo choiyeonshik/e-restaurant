@@ -59,6 +59,30 @@ chmod 700 get_helm.sh
 helm version
 
 #========================================================================================
+[#Azure 관련]
+-------------------------------
+ㅇ 접속계정 : user23@gkn2021hotmail.onmicrosoft.com
+ㅇ 리소스 그룹 : skcc-user23-rsrcgrp
+ㅇ Kubernetes 클러스터 이름 : skcc-user23-aks
+  ※ aks : Azure Kubernetes Service
+ㅇ 컨테이너 레지스트리(ACR) 이름 : skccuser23
+  ※ ACR : Azure Container Registry
+#========================================================================================
+#Azure 연결
+az login
+
+#azure shell 에서 클러스터 연결
+#az aks get-credentials --resource-group (user01_resource_group) --name (user01_cluster)
+chmod 600 /root/.kube/config
+az aks get-credentials --resource-group skcc-user23-rsrcgrp --name skcc-user23-aks
+
+kubectl get all
+
+#AKS와 ACR 연결
+#az aks update -n [azure-cluster-name] -g [azure-resource-Group-name] --attach-acr [azure-acr-name]
+az aks update -n skcc-user23-aks -g skcc-user23-rsrcgrp --attach-acr skccuser23
+
+#========================================================================================
 [KAFKA 설치]
 #========================================================================================
 # helm 의 설치관리자를 위한 시스템 사용자 생성
@@ -68,7 +92,7 @@ kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceac
 helm repo add incubator https://charts.helm.sh/incubator
 helm repo update
 kubectl create ns kafka
-helm install --name my-kafka --namespace kafka incubator/kafka
+helm install my-kafka --namespace kafka incubator/kafka
 
 
 kubectl get namespace
@@ -76,10 +100,11 @@ kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-z
 kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-zookeeper:2181 --list
 
 #확인
-kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-producer --broker-list my-kafka:9092 --topic erestaurant
+#kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-producer --broker-list my-kafka:9092 --topic erestaurant
 kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-consumer --bootstrap-server my-kafka:9092 --topic erestaurant --from-beginning
 
-helm del --purge my-kafka
+#######################이하, Pass####################################################################
+#helm del --purge my-kafka
 #----------------------------
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
 위 명령어를 실행하면 아래와 같이 default storage가 두 개로 설정되는 오류가 발생
@@ -93,172 +118,117 @@ managed-premium (default)   kubernetes.io/azure-disk   Delete          WaitForFi
 #----------------------------
 >>> 해결책은 아래 Command 실행
 kubectl patch storageclass managed-premium -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
-#========================================================================================
+####################################################################################################
 
-[#Azure 관련]
--------------------------------
-ㅇ 접속계정 : user01@skusers01gmail.onmicrosoft.com
-ㅇ 리소스 그룹 : skcc-1team-rsrcgrp
-ㅇ Kubernetes 클러스터 이름 : skcc-1team-aks
-  ※ aks : Azure Kubernetes Service
-ㅇ 컨테이너 레지스트리(ACR) 이름 : skcc1team
-  ※ ACR : Azure Container Registry
-#========================================================================================
-#Azure 연결
-az login
-
-#azure shell 에서 클러스터 연결
-#az aks get-credentials --resource-group (user01_resource_group) --name (user01_cluster)
-az aks get-credentials --resource-group skcc-1team-rsrcgrp --name skcc-1team-aks
-
-chmod 600 /root/.kube/config
-kubectl get all
-
-#AKS와 ACR 연결
-#az aks update -n [azure-cluster-name] -g [azure-resource-Group-name] --attach-acr [azure-acr-name]
-az aks update -n skcc-1team-aks -g skcc-1team-rsrcgrp --attach-acr skcc1team
 
 #========================================================================================
 #소스가져오기
 #========================================================================================
-git clone https:/github.com/skcc-1st-team/gbike.git
+git clone https:/github.com/choiyeonshik/e-restaurant.git
 #========================================================================================
 
 #========================================================================================
 #네임스페이스 만들기
 #========================================================================================
-kubectl create ns gbike
+kubectl create ns choi
 kubectl get ns
-kubectl get all -n gbike
+kubectl get all -n choi
 #========================================================================================
 
 #폴더이동
-cd gbike
+cd e-restaurant
 
 #========================================================================================
 #Deployment & Build & Push
 #========================================================================================
-cd /home/project/gbike/bike
+cd /home/project/e-restaurant/hall
 mvn clean
 mvn compile
 mvn package
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/bike:latest .
-#docker push skcc1team.azurecr.io/bike:latest
-#kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
+#이미지 build & push & Deploy
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v1 .
+kubectl create deploy hall --image=skccuser23.azurecr.io/hall:v1 -n choi
 
-kubectl create deploy bike --image=skcc1team.azurecr.io/bike:latest -n gbike
-kubectl get all -n gbike
+#yaml 이용(이하, 동문)
+#kubectl create -f ./kubernetes/deployment.yml -n choi
+#kubectl create -f ./kubernetes/service.yaml -n choi
 
-kubectl expose deploy bike --type=ClusterIP --port=8088 -n gbike
-
-#이미지 build & push
-cd /home/project/gbike/billing
+cd /home/project/e-restaurant/kitchen
 mvn clean
 mvn compile
 mvn package
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/billing:latest .
-#kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
+#이미지 build & push & Deploy
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/kitchen:v1 .
+kubectl create deploy kitchen --image=skccuser23.azurecr.io/kitchen:v1 -n choi
 
-kubectl create deploy billing --image=skcc1team.azurecr.io/billing:latest -n gbike
-kubectl get all -n gbike
-
-kubectl expose deploy billing --type=ClusterIP --port=8080 -n gbike
-
-#이미지 build & push
-cd /home/project/gbike/rent
-#kubectl delete deployment rent -n gbike
+cd /home/project/e-restaurant/payment
 mvn clean
 mvn compile
 mvn package
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/rent:latest .
-kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
+#이미지 build & push & Deploy
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/payment:v1 .
+kubectl create deploy payment --image=skccuser23.azurecr.io/payment:v1 -n choi
 
-#kubectl create deploy rent --image=skcc1team.azurecr.io/rent:latest -n gbike
-kubectl get all -n gbike
-
-kubectl expose deploy rent --type=ClusterIP --port=8080 -n gbike
-
-#이미지 build & push
-cd /home/project/gbike/rentAndBillingView
+cd /home/project/e-restaurant/workercenter
 mvn clean
 mvn compile
 mvn package
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/rentandbillingview:latest .
-#kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
+#이미지 build & push & Deploy
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/workercenter:v1 .
+kubectl create deploy workercenter --image=skccuser23.azurecr.io/workercenter:v1 -n choi
 
-kubectl create deploy rentandbillingview --image=skcc1team.azurecr.io/rentandbillingview:latest -n gbike
-kubectl get all -n gbike
-
-kubectl expose deploy rentandbillingview --type=ClusterIP --port=8080 -n gbike
-
-#이미지 build & push
-cd /home/project/gbike/userDeposit
+cd /home/project/e-restaurant/gateway
 mvn clean
 mvn compile
 mvn package
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/userdeposit:latest .
-#kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
+#이미지 build & push & Deploy
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
+kubectl create deploy gateway --image=skccuser23.azurecr.io/gateway:v1 -n choi
 
-kubectl create deploy userdeposit --image=skcc1team.azurecr.io/userdeposit:latest -n gbike
-kubectl get all -n gbike
+#확인
+kubectl get all -n choi
+kubectl describe pod/gateway-7cffc5cd4d-bdbhx -n choi
+kubectl logs -f pod/gateway-7cffc5cd4d-bdbhx -n choi
 
-kubectl expose deploy userdeposit --type=ClusterIP --port=8080 -n gbike
+#이후에는 apply로 처리
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/gateway:v1 .
+#kubectl create -f ./kubernetes/deployment.yml -n choi
+#kubectl create -f ./kubernetes/service.yaml -n choi
+#kubectl apply -f ./kubernetes/deployment.yml -n choi
+#kubectl apply -f ./kubernetes/service.yaml -n choi
 
-#이미지 build & push
-cd /home/project/gbike/gateway
-mvn clean
-mvn compile
-mvn package
-
-az acr build --registry skcc1team --image skcc1team.azurecr.io/gateway:latest .
-#kubectl create -f ./kubernetes/deployment.yml -n gbike
-#kubectl create -f ./kubernetes/service.yaml -n gbike
-#kubectl apply -f ./kubernetes/deployment.yml -n gbike
-#kubectl apply -f ./kubernetes/service.yaml -n gbike
-
-kubectl create deploy gateway --image=skcc1team.azurecr.io/gateway:latest -n gbike
-kubectl get all -n gbike
-
-kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n gbike
-
-kubectl describe pod/gateway-7cffc5cd4d-bdbhx -n gbike
-kubectl logs -f pod/gateway-7cffc5cd4d-bdbhx -n gbike
+kubectl expose deploy gateway --type=LoadBalancer --port=8080 -n choi
 
 #========================================================================================
 #Config Map
 #========================================================================================
-kubectl create configmap configmap-bikeurl --from-file=/home/project/gbike/rent/kubernetes/deployment-config.yaml -n gbike
-#kubectl apply -f deployment-config.yaml -n gbike
-#kubectl create configmap configmap-bikeurl --from-literal=bikeurl=http://bike:8080 -n gbike
-kubectl get configmap configmap-bikeurl -o yaml -n gbike
+kubectl create configmap configmap-bikeurl --from-file=/home/project/e-restaurant/hall/kubernetes/deployment-config.yaml -n choi
+#kubectl apply -f deployment-config.yaml -n choi
+#kubectl create configmap configmap-bikeurl --from-literal=bikeurl=http://hall:8080 -n choi
+kubectl get configmap configmap-bikeurl -o yaml -n choi
 
 #========================================================================================
 #Circuit Breaker
 #========================================================================================
-siege -c5 -t10S -r10 -v --content-type "application/json" 'http://20.194.44.70:8080/rents POST {"bikeid": "1", "userid": "1"}'
+siege -c5 -t10S -r10 -v --content-type "application/json" 'http://20.194.44.70:8080/hall POST {"bikeid": "1", "userid": "1"}'
 
 #========================================================================================
 #무정지 재배포
 #========================================================================================
-kubectl get all -n gbike
+kubectl get all -n choi
 
-az acr build --registry skcc1team --image skcc1team.azurecr.io/billing:v1 .
-kubectl apply -f kubernetes/deployment.yml -n gbike
-kubectl get all -n gbike
+az acr build --registry skccuser23 --image skccuser23.azurecr.io/hall:v1 .
+kubectl apply -f kubernetes/deployment.yml -n choi
+kubectl get all -n choi
 
 #========================================================================================
 #기타
 #========================================================================================
-kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n gbike
+kubectl describe pod/nginx3-7cffc5cd4d-bdbhx -n choi
 
-kubectl apply -f deployment-config.yaml -n gbike
+kubectl apply -f deployment-config.yaml -n choi
