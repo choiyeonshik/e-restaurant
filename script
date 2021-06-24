@@ -124,8 +124,7 @@ kubectl patch storageclass managed-premium -p '{"metadata": {"annotations":{"sto
 #========================================================================================
 #소스가져오기
 #========================================================================================
-git clone https:/github.com/choiyeonshik/e-restaurant.git
-#========================================================================================
+git clone https://github.com/choiyeonshik/e-restaurant.git
 
 #========================================================================================
 #네임스페이스 만들기
@@ -133,10 +132,6 @@ git clone https:/github.com/choiyeonshik/e-restaurant.git
 kubectl create ns choi
 kubectl get ns
 kubectl get all -n choi
-#========================================================================================
-
-#폴더이동
-cd e-restaurant
 
 #========================================================================================
 #Deployment & Build & Push

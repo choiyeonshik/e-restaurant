@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: workercenter
-          image: username/workercenter:latest
+          image: skccuser23.azurecr.io/workercenter:v1
           ports:
             - containerPort: 8080
           readinessProbe:

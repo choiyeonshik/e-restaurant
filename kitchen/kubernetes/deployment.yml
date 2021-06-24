@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: kitchen
-          image: username/kitchen:latest
+          image: skccuser23.azurecr.io/kitchen:v1
           ports:
             - containerPort: 8080
           readinessProbe:
