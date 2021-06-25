@@ -46,11 +46,11 @@
 ## 2. 분석/설계
 
 > MSAEZ 를 통하여 DDD(Domain Driven Desing)기반 Event Storming을 진행하였습니다.
-> 먼저, Event, Actor와 Command, Policy 순으로 도출하고, Aggregate로 관련 Object를 하나로 묶었습니다.
-> 이후 Bounded Context를 정의하고 Micro Service를 구성하였으며 Service간 필요정보가 없는지
-> Attribute, Policy 중심으로 Inspection 하였습니다.
+> Event, Actor와 Command, Policy 순으로 item을 도출하고, Aggregate로 관련 Object를 하나로 묶었습니다.
+> 이후 Bounded Context로 Micro Service를 구성하였으며 
+> Service간 필요정보가 없는지 Attribute, Policy 중심으로 Inspection 하였습니다.
 >
-> Micro Service 간에는 Choreography SAGA, Orchestrator SAGA 패턴을 적용하였습니다.
+> 특히, Micro Service 간에는 Choreography SAGA, Orchestrator SAGA 패턴을 적용하였습니다.
 >(Pub/Sub, FeignClient(Req/Res) 구조)
 
 #### 2.1. Event Storming
